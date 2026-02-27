@@ -1,31 +1,54 @@
 # MkDocs DBML Plugin
 
-Плагин для MkDocs, который позволяет встраивать красивые **визуальные диаграммы** баз данных из DBML (Database Markup Language) прямо в вашу документацию.
+MkDocs plugin that renders [DBML](https://dbml.dbdiagram.io/) code blocks as interactive, visual ERD (Entity-Relationship Diagram) directly in your documentation.
 
-## Возможности
+## Features
 
-- 🎨 **Визуальные ERD-диаграммы** в стиле Mermaid с SVG-графикой
-- 📊 Автоматическая генерация таблиц с полями, типами данных и атрибутами
-- 🔗 **Связи от поля к полю** - линии идут от конкретного FK к конкретному PK
-- 🎯 **Material Design 3 иконки** - современные SVG-иконки вместо эмодзи
-- 🖱️ **Drag & Drop** - перетаскивайте таблицы мышкой для удобного расположения
-- 🔍 **Zoom колесиком мыши** - плавное масштабирование с фокусом на курсор
-- 💅 Современный градиентный дизайн с плавными анимациями
-- ✨ Интерактивность: hover-эффекты, подсветка связанных таблиц
-- 🎨 **5 цветовых тем** - default, ocean, sunset, forest, dark
-- 🌓 Поддержка темной темы с автоопределением
-- 📱 Адаптивный дизайн для мобильных устройств
-- 🚀 Простая интеграция с MkDocs
+- **Interactive SVG diagrams** — drag tables, zoom with mouse wheel, pan the canvas
+- **Field-to-field connections** — relationship lines go from the exact FK field to the exact PK field
+- **Orthogonal routing** — lines use right-angle paths and automatically avoid overlapping tables
+- **Click-to-select** — click any relationship line to highlight it and its connected fields
+- **Crow's foot notation** — classic ERD markers for one-to-one, one-to-many, many-to-many
+- **Material Design 3 icons** — PK, FK, NOT NULL, UNIQUE badges on fields
+- **5 color themes** — default, ocean, sunset, forest, dark
+- **High performance** — optional Cython-compiled routing engine; Numba JIT fallback
 
-## Установка
+## Installation
+
+### From source (local project)
+
+Clone or copy the plugin directory into your workspace, then install in editable mode:
 
 ```bash
-pip install mkdocs-dbml-plugin
+cd path/to/mkdocs-dbml-plugin
+pip install -e .
 ```
 
-## Использование
+### From source with Cython (optional, for best performance)
 
-### 1. Добавьте плагин в `mkdocs.yml`:
+If you have a C compiler available (MSVC on Windows, gcc/clang on Linux/macOS):
+
+```bash
+pip install cython
+cd path/to/mkdocs-dbml-plugin
+python setup.py build_ext --inplace
+pip install -e .
+```
+
+Without Cython the plugin works fine — it falls back to a pure-Python router.
+
+### Dependencies
+
+Installed automatically by `pip install`:
+
+| Package | Purpose |
+|---------|---------|
+| `mkdocs >= 1.0` | Documentation framework |
+| `pydbml >= 1.0` | DBML parser |
+
+## Quick start
+
+### 1. Enable the plugin in `mkdocs.yml`
 
 ```yaml
 plugins:
@@ -33,7 +56,7 @@ plugins:
   - dbml
 ```
 
-### 2. Используйте DBML в ваших markdown-файлах:
+### 2. Write DBML in any Markdown file
 
 ````markdown
 ```dbml
@@ -41,11 +64,7 @@ Table users {
   id integer [primary key]
   username varchar(50) [not null, unique]
   email varchar(100) [not null]
-  created_at timestamp [default: `now()`]
-  
-  indexes {
-    email [unique]
-  }
+  created_at timestamp
 }
 
 Table posts {
@@ -53,7 +72,8 @@ Table posts {
   user_id integer [ref: > users.id]
   title varchar(200) [not null]
   content text
-  created_at timestamp [default: `now()`]
+  published boolean [default: false]
+  created_at timestamp
 }
 
 Table comments {
@@ -66,48 +86,123 @@ Table comments {
 ```
 ````
 
-### 3. Плагин автоматически преобразует DBML в красивые визуальные диаграммы!
+### 3. Build or serve
 
-## Конфигурация
+```bash
+mkdocs serve        # live preview at http://127.0.0.1:8000
+mkdocs build        # static output in site/
+```
 
-В `mkdocs.yml` можно настроить дополнительные параметры:
+The plugin converts every `` ```dbml `` code block into an interactive SVG diagram.
+
+## Configuration
+
+All options are set under the `dbml` plugin entry in `mkdocs.yml`:
 
 ```yaml
 plugins:
   - dbml:
-      theme: default  # default, ocean, sunset, forest, dark
-      show_indexes: true  # показывать индексы
-      show_notes: true  # показывать заметки
+      theme: default      # color theme (see below)
+      show_indexes: true   # display index information
+      show_notes: true     # display table notes
 ```
 
-### Доступные темы
+### Themes
 
-- **default** - фиолетовый градиент (классический)
-- **ocean** - синий градиент (морская тема)
-- **sunset** - розово-голубой градиент (закат)
-- **forest** - зеленый градиент (лесная тема)
-- **dark** - темная тема для dark mode
+| Theme | Header gradient | Best for |
+|-------|----------------|----------|
+| `default` | Purple | Light backgrounds |
+| `ocean` | Deep blue → cyan | Light backgrounds |
+| `sunset` | Pink → blue | Light backgrounds |
+| `forest` | Dark teal → green | Light backgrounds |
+| `dark` | Dark violet | Dark backgrounds |
 
-Каждая тема включает:
-- Уникальный градиент для заголовков таблиц
-- Согласованные цвета для линий связей
-- Подходящий фон и рамки
+Example with the dark theme:
 
-## Пример вывода
+```yaml
+plugins:
+  - dbml:
+      theme: dark
+```
 
-Плагин генерирует **интерактивную визуальную ERD-диаграмму** с:
-- 📦 Таблицами в виде красивых карточек с градиентными заголовками
-- 🎯 **Material Design 3 иконками** - современные SVG-иконки для ключей и атрибутов
-- 🔗 **Связями от поля к полю** - линии идут точно от FK-поля к PK-полю
-- ➡️ Изогнутыми Bezier-кривыми с метками типов (1:N, N:1, 1:1, N:M)
-- 🖱️ **Drag & Drop** - перетаскивайте таблицы для удобного расположения
-- 🔍 **Zoom колесиком** - масштабируйте диаграмму с фокусом на курсор
-- ✨ Hover-эффектами - подсветка связанных таблиц при наведении
-- 💡 Tooltips с полной информацией о полях
-- 🎨 5 цветовых тем на выбор
+## DBML syntax cheat-sheet
 
-Результат выглядит как профессиональная интерактивная ERD-диаграмма из инструментов типа dbdiagram.io или Lucidchart, но встроенная прямо в вашу документацию!
+```dbml
+Table table_name {
+  column_name column_type [attributes]
+}
+```
 
-## Лицензия
+### Column attributes
 
-MIT License
+| Attribute | Syntax |
+|-----------|--------|
+| Primary key | `[primary key]` or `[pk]` |
+| Not null | `[not null]` |
+| Unique | `[unique]` |
+| Default value | `[default: value]` |
+| Foreign key | `[ref: > other_table.column]` |
+
+### Relationship types
+
+| Syntax | Meaning | Markers |
+|--------|---------|---------|
+| `ref: > table.col` | Many-to-one | Circle → Crow's foot |
+| `ref: < table.col` | One-to-many | Crow's foot → Bar |
+| `ref: - table.col` | One-to-one | Bar → Bar |
+| `ref: <> table.col` | Many-to-many | Crow's foot → Crow's foot |
+
+### Indexes and notes
+
+```dbml
+Table example {
+  id integer [pk]
+  user_id integer
+  post_id integer
+
+  indexes {
+    user_id
+    (user_id, post_id) [unique]
+  }
+
+  Note: 'Description of this table'
+}
+```
+
+Full DBML specification: [dbml.dbdiagram.io/docs](https://dbml.dbdiagram.io/docs/)
+
+## Interaction guide
+
+| Action | How |
+|--------|-----|
+| **Move a table** | Click and drag the table |
+| **Pan the canvas** | Click and drag empty space |
+| **Zoom** | Mouse wheel (30% – 300%) |
+| **Highlight connections** | Hover over a table |
+| **Select a line** | Click on any relationship line |
+| **Field tooltip** | Hover over a field row |
+
+## Project structure
+
+```
+mkdocs-dbml-plugin/
+├── setup.py                          # package config
+├── requirements.txt
+├── mkdocs_dbml_plugin/
+│   ├── __init__.py
+│   ├── plugin.py                     # MkDocs hook + interactive JS
+│   ├── renderer.py                   # DBML → SVG rendering + CSS
+│   ├── layout.py                     # BFS graph layout engine
+│   ├── config.py                     # theme definitions
+│   ├── routing.py                    # import wrapper (Cython → Python)
+│   ├── _routing.pyx                  # Cython routing (optional)
+│   └── _routing_py.py               # pure-Python routing fallback
+└── example/                          # demo MkDocs site
+    ├── mkdocs.yml
+    └── docs/
+        └── *.md
+```
+
+## License
+
+MIT
