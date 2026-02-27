@@ -1,0 +1,16 @@
+site_name: DBML Plugin Demo
+site_description: Демонстрация плагина MkDocs для рендеринга DBML
+
+theme:
+  name: readthedocs
+
+plugins:
+  - search
+  - dbml:
+      theme: default
+      show_indexes: true
+      show_notes: true
+
+nav:
+  - Главная: index.md
+  - Примеры: examples.md
