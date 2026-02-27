@@ -1,18 +1,30 @@
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
+
+ext_modules = []
+try:
+    from Cython.Build import cythonize
+
+    ext_modules = cythonize(
+        [Extension("mkdocs_dbml_plugin._routing", ["mkdocs_dbml_plugin/_routing.pyx"])],
+        compiler_directives={"language_level": "3"},
+    )
+except ImportError:
+    pass
 
 setup(
     name="mkdocs-dbml-plugin",
     version="0.1.0",
     author="Your Name",
     author_email="your.email@example.com",
-    description="MkDocs plugin to render DBML (Database Markup Language) as beautiful HTML tables",
+    description="MkDocs plugin to render DBML as interactive ERD diagrams",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/yourusername/mkdocs-dbml-plugin",
     packages=find_packages(),
+    ext_modules=ext_modules,
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
@@ -20,11 +32,6 @@ setup(
         "Topic :: Text Processing :: Markup",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
     ],
     python_requires=">=3.7",
     install_requires=[

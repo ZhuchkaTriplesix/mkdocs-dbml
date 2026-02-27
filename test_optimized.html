@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Optimized DBML Diagram</title>
+    <style>
+    
+        .dbml-diagram-wrapper {
+            margin: 2rem 0;
+            padding: 2rem;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border-radius: 16px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+            position: relative;
+            cursor: grab;
+        }
+        
+        .dbml-diagram-wrapper:active {
+            cursor: grabbing;
+        }
+        
+        .dbml-controls {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 10;
+        }
+        
+        .dbml-zoom-btn {
+            background: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .dbml-zoom-btn:hover {
+            background: #6366f1;
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dbml-zoom-btn:hover::after {
+            filter: brightness(0) invert(1);
+        }
+        
+        .dbml-zoom-btn:active {
+            transform: translateY(0) scale(0.95);
+        }
+        
+        .dbml-legend {
+            position: absolute;
+            bottom: 1.5rem;
+            left: 1.5rem;
+            background: white;
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            display: flex;
+            gap: 1.5rem;
+            font-size: 13px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+            z-index: 10;
+        }
+        
+        .dbml-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #4b5563;
+            font-weight: 500;
+        }
+        
+        .dbml-legend-item svg {
+            flex-shrink: 0;
+        }
+        
+        .dbml-legend-item span {
+            white-space: nowrap;
+        }
+        
+        .dbml-diagram {
+            width: 100%;
+            height: auto;
+            min-height: 400px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            transition: transform 0.3s ease;
+            transform-origin: center center;
+        }
+        
+        .dbml-table-group {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .dbml-table-group:hover .dbml-table-bg {
+            stroke: #6366f1;
+            stroke-width: 3;
+            filter: drop-shadow(0 12px 24px rgba(99, 102, 241, 0.3));
+        }
+        
+        .dbml-table-group:hover .dbml-table-title {
+            font-size: 17px;
+        }
+        
+        .dbml-field-row {
+            cursor: help;
+            transition: all 0.2s ease;
+        }
+        
+        .dbml-field-row:hover {
+            opacity: 1;
+        }
+        
+        .dbml-field-row:hover text {
+            font-weight: 600;
+        }
+        
+        .dbml-table-bg {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .dbml-table-header-bg {
+            transition: all 0.3s ease;
+        }
+        
+        .dbml-table-title {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            user-select: none;
+            transition: all 0.3s ease;
+        }
+        
+        .dbml-relationship-line {
+            transition: opacity 0.2s ease, stroke-width 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .dbml-relationship-line:hover {
+            opacity: 1 !important;
+            stroke-width: 3 !important;
+        }
+        
+        .dbml-relationship-group:hover .dbml-rel-label {
+            font-weight: 700;
+        }
+        
+        .dbml-relationship-group {
+            pointer-events: all;
+        }
+        
+        .dbml-rel-label {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            user-select: none;
+            pointer-events: none;
+        }
+        
+        .dbml-error {
+            padding: 1rem 1.5rem;
+            background: #fef2f2;
+            border: 2px solid #ef4444;
+            border-radius: 8px;
+            color: #dc2626;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            margin: 2rem 0;
+        }
+        
+        @media (max-width: 768px) {
+            .dbml-diagram-wrapper {
+                padding: 1rem;
+            }
+            
+            .dbml-diagram {
+                min-height: 300px;
+            }
+            
+            .dbml-controls {
+                top: 0.5rem;
+                right: 0.5rem;
+            }
+            
+            .dbml-zoom-btn {
+                padding: 0.375rem 0.5rem;
+                font-size: 12px;
+            }
+            
+            .dbml-legend {
+                position: static;
+                margin-top: 1rem;
+                flex-wrap: wrap;
+            }
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            .dbml-diagram-wrapper {
+                background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+                border-color: #374151;
+            }
+            
+            .dbml-legend {
+                background: rgba(31, 41, 55, 0.95);
+                backdrop-filter: blur(10px);
+            }
+            
+            .dbml-legend-item {
+                color: #e5e7eb;
+            }
+            
+            .dbml-zoom-btn {
+                background: rgba(31, 41, 55, 0.95);
+                backdrop-filter: blur(10px);
+                color: #e5e7eb;
+            }
+            
+            .dbml-zoom-btn:hover {
+                background: #818cf8;
+            }
+            
+            .dbml-table-bg {
+                fill: #111827;
+                stroke: #374151;
+            }
+            
+            .dbml-table-group:hover .dbml-table-bg {
+                stroke: #818cf8;
+                filter: drop-shadow(0 12px 24px rgba(129, 140, 248, 0.4));
+            }
+            
+            .dbml-table-title {
+                fill: white;
+            }
+            
+            text {
+                fill: #e5e7eb;
+            }
+            
+            .dbml-relationship-line {
+                stroke: #818cf8;
+            }
+            
+            .dbml-rel-label {
+                fill: white;
+            }
+            
+            .dbml-relationship-line:hover {
+                filter: drop-shadow(0 4px 12px rgba(129, 140, 248, 0.6));
+            }
+        }
+        
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        padding: 2rem;
+        background: #ffffff;
+        margin: 0;
+    }
+    h1 {
+        color: #1f2937;
+        margin-bottom: 1rem;
+    }
+    .features {
+        background: #f0fdf4;
+        border-left: 4px solid #10b981;
+        padding: 1rem 1.5rem;
+        margin: 1rem 0 2rem 0;
+        border-radius: 4px;
+    }
+    .features h3 {
+        margin: 0 0 0.75rem 0;
+        color: #065f46;
+    }
+    .features ul {
+        margin: 0;
+        padding-left: 1.5rem;
+    }
+    .features li {
+        color: #047857;
+        margin: 0.5rem 0;
+    }
+    </style>
+</head>
+<body>
+    <h1>Оптимизированная версия</h1>
+    
+    <div class="features">
+        <h3>Что исправлено:</h3>
+        <ul>
+            <li><strong>Производительность</strong> - используется requestAnimationFrame для плавного drag</li>
+            <li><strong>Связи прикрепляются</strong> - динамически обновляются при перемещении</li>
+            <li><strong>Стрелки "воронья лапка"</strong> - классический стиль как на картинке</li>
+            <li><strong>Тонкие линии</strong> - stroke-width: 2px (вместо 2.5-3px)</li>
+            <li><strong>Без пунктира</strong> - сплошные линии по умолчанию</li>
+        </ul>
+    </div>
+    
+    <!-- dbml-styles -->
+<div class="dbml-diagram-wrapper" id="dbml-7f21f5ab">
+<div class="dbml-legend">
+<div class="dbml-legend-item">
+<svg width="20" height="20" viewBox="0 0 24 24"><path fill="#ef4444" d="M12 2C13.1 2 14 2.9 14 4C14 4.74 13.6 5.39 13 5.73V7H14C16.76 7 19 9.24 19 12V13H21V15H19V16H21V18H19V20H17V18H15V20H13V18H11V20H9V18H7V20H5V18H3V16H5V15H3V13H5V12C5 9.24 7.24 7 10 7H11V5.73C10.4 5.39 10 4.74 10 4C10 2.9 10.9 2 12 2M12 4C11.45 4 11 4.45 11 5C11 5.55 11.45 6 12 6C12.55 6 13 5.55 13 5C13 4.45 12.55 4 12 4Z"/></svg>
+<span>Primary Key</span></div>
+<div class="dbml-legend-item">
+<svg width="20" height="20" viewBox="0 0 24 24"><path fill="#10b981" d="M10.59,13.41C11,13.8 11,14.44 10.59,14.83C10.2,15.22 9.56,15.22 9.17,14.83C7.22,12.88 7.22,9.71 9.17,7.76V7.76L12.71,4.22C14.66,2.27 17.83,2.27 19.78,4.22C21.73,6.17 21.73,9.34 19.78,11.29L18.29,12.78C18.3,11.96 18.17,11.14 17.89,10.36L18.36,9.88C19.54,8.71 19.54,6.81 18.36,5.64C17.19,4.46 15.29,4.46 14.12,5.64L10.59,9.17C9.41,10.34 9.41,12.24 10.59,13.41M13.41,9.17C13.8,8.78 14.44,8.78 14.83,9.17C16.78,11.12 16.78,14.29 14.83,16.24V16.24L11.29,19.78C9.34,21.73 6.17,21.73 4.22,19.78C2.27,17.83 2.27,14.66 4.22,12.71L5.71,11.22C5.7,12.04 5.83,12.86 6.11,13.65L5.64,14.12C4.46,15.29 4.46,17.19 5.64,18.36C6.81,19.54 8.71,19.54 9.88,18.36L13.41,14.83C14.59,13.66 14.59,11.76 13.41,10.59C13,10.2 13,9.56 13.41,9.17Z"/></svg>
+<span>Foreign Key</span></div>
+<div class="dbml-legend-item">
+<svg width="18" height="18" viewBox="0 0 24 24"><path fill="#f59e0b" d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M11,7H13V9H11V7M11,11H13V17H11V11Z"/></svg>
+<span>Not Null</span></div>
+<div class="dbml-legend-item">
+<svg width="18" height="18" viewBox="0 0 24 24"><path fill="#3b82f6" d="M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3M7,7H17V5H19V19H5V5H7V7M7.5,13.5L9,12L11,14L15.5,9.5L17,11L11,17L7.5,13.5Z"/></svg>
+<span>Unique</span></div>
+</div>
+<svg class="dbml-diagram" viewBox="0 0 910 707" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<marker id="crow-one" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+<path d="M 0,5 L 9,5 M 9,0 L 9,10" stroke="#6366f1" fill="none" stroke-width="1.5" stroke-linecap="square"/>
+</marker>
+<marker id="crow-many" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto">
+<path d="M 0,0 L 6,6 L 0,12 M 6,0 L 11,6 L 6,12" stroke="#6366f1" fill="none" stroke-width="1.5" stroke-linecap="square"/>
+</marker>
+<marker id="circle-end" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+<circle cx="4" cy="4" r="2.5" fill="none" stroke="#6366f1" stroke-width="1.5"/>
+</marker>
+<filter id="shadow">
+<feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.15"/>
+</filter>
+<filter id="glow">
+<feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+<feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
+</defs>
+<g class="dbml-relationships-layer">
+<g class="dbml-relationship-group" data-from="posts.user_id" data-to="users.id"><path d="M 60 566 C 180.0 566, 240.0 118, 360 118" stroke="#6366f1" stroke-width="2" fill="none" marker-start="url(#circle-end)" marker-end="url(#crow-many)" class="dbml-relationship-line" opacity="0.7"/><rect x="194.5" y="323.0" width="31" height="16" rx="3" fill="white" stroke="#6366f1" stroke-width="1.5"/><text x="210.0" y="335.0" text-anchor="middle" font-size="10" fill="#6366f1" font-weight="600" class="dbml-rel-label">1:N</text></g>
+<g class="dbml-relationship-group" data-from="comments.post_id" data-to="posts.id"><path d="M 560 566 C 640.0 566, 280.0 538, 360 538" stroke="#6366f1" stroke-width="2" fill="none" marker-start="url(#circle-end)" marker-end="url(#crow-many)" class="dbml-relationship-line" opacity="0.7"/><rect x="444.5" y="533.0" width="31" height="16" rx="3" fill="white" stroke="#6366f1" stroke-width="1.5"/><text x="460.0" y="545.0" text-anchor="middle" font-size="10" fill="#6366f1" font-weight="600" class="dbml-rel-label">1:N</text></g>
+<g class="dbml-relationship-group" data-from="comments.user_id" data-to="users.id"><path d="M 560 594 C 640.0 594, 280.0 118, 360 118" stroke="#6366f1" stroke-width="2" fill="none" marker-start="url(#circle-end)" marker-end="url(#crow-many)" class="dbml-relationship-line" opacity="0.7"/><rect x="444.5" y="337.0" width="31" height="16" rx="3" fill="white" stroke="#6366f1" stroke-width="1.5"/><text x="460.0" y="349.0" text-anchor="middle" font-size="10" fill="#6366f1" font-weight="600" class="dbml-rel-label">1:N</text></g>
+</g>
+<g class="dbml-tables-layer">
+<g class="dbml-table-group" data-table="users">
+<rect x="60" y="60" width="300" height="149" 
+class="dbml-table-bg" fill="white" stroke="#e5e7eb" stroke-width="2" rx="8" filter="url(#shadow)"/>
+<defs><linearGradient id="gradient-9bc65c2a" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+<stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+</linearGradient></defs>
+<rect x="60" y="60" width="300" height="40" 
+class="dbml-table-header-bg" fill="url(#gradient-9bc65c2a)" rx="8"/>
+<rect x="60" y="95" width="300" height="10" fill="white"/>
+<text x="210.0" y="85" 
+class="dbml-table-title" text-anchor="middle" fill="white" 
+font-size="16" font-weight="600">users</text>
+<line x1="60" y1="105" x2="360" y2="105" 
+stroke="#e5e7eb" stroke-width="1"/>
+<g class="dbml-field-row" data-field="users.id"><title>id: integer | PRIMARY KEY</title><svg x="70" y="106" width="16" height="16" viewBox="0 0 24 24"><path fill="#ef4444" d="M12 2C13.1 2 14 2.9 14 4C14 4.74 13.6 5.39 13 5.73V7H14C16.76 7 19 9.24 19 12V13H21V15H19V16H21V18H19V20H17V18H15V20H13V18H11V20H9V18H7V20H5V18H3V16H5V15H3V13H5V12C5 9.24 7.24 7 10 7H11V5.73C10.4 5.39 10 4.74 10 4C10 2.9 10.9 2 12 2Z"/></svg><text x="90" y="118" font-size="13" fill="#ef4444" font-weight="500" font-family="monospace">id</text><text x="210" y="118" font-size="11" fill="#7c3aed" font-family="monospace">integer</text></g>
+<line x1="68" y1="132" x2="352" y2="132" 
+stroke="#f3f4f6" stroke-width="1"/>
+<g class="dbml-field-row" data-field="users.username"><title>username: varchar(50) | NOT NULL | UNIQUE</title><text x="90" y="146" font-size="13" fill="#1f2937" font-weight="500" font-family="monospace">username</text><text x="210" y="146" font-size="11" fill="#7c3aed" font-family="monospace">varchar(50)</text><svg x="328" y="134" width="16" height="16" viewBox="0 0 24 24"><path fill="#f59e0b" d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M11,7H13V9H11V7M11,11H13V17H11V11Z"/></svg><svg x="306" y="134" width="16" height="16" viewBox="0 0 24 24"><path fill="#3b82f6" d="M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3M7,7H17V5H19V19H5V5H7V7M7.5,13.5L9,12L11,14L15.5,9.5L17,11L11,17L7.5,13.5Z"/></svg></g>
+<line x1="68" y1="160" x2="352" y2="160" 
+stroke="#f3f4f6" stroke-width="1"/>
+<g class="dbml-field-row" data-field="users.email"><title>email: varchar(100) | NOT NULL</title><text x="90" y="174" font-size="13" fill="#1f2937" font-weight="500" font-family="monospace">email</text><text x="210" y="174" font-size="11" fill="#7c3aed" font-family="monospace">varchar(100)</text><svg x="328" y="162" width="16" height="16" viewBox="0 0 24 24"><path fill="#f59e0b" d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M11,7H13V9H11V7M11,11H13V17H11V11Z"/></svg></g>
+</g>
+<g class="dbml-table-group" data-table="posts">
+<rect x="60" y="480" width="300" height="177" 
+class="dbml-table-bg" fill="white" stroke="#e5e7eb" stroke-width="2" rx="8" filter="url(#shadow)"/>
+<defs><linearGradient id="gradient-18958e30" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+<stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+</linearGradient></defs>
+<rect x="60" y="480" width="300" height="40" 
+class="dbml-table-header-bg" fill="url(#gradient-18958e30)" rx="8"/>
+<rect x="60" y="515" width="300" height="10" fill="white"/>
+<text x="210.0" y="505" 
+class="dbml-table-title" text-anchor="middle" fill="white" 
+font-size="16" font-weight="600">posts</text>
+<line x1="60" y1="525" x2="360" y2="525" 
+stroke="#e5e7eb" stroke-width="1"/>
+<g class="dbml-field-row" data-field="posts.id"><title>id: integer | PRIMARY KEY</title><svg x="70" y="526" width="16" height="16" viewBox="0 0 24 24"><path fill="#ef4444" d="M12 2C13.1 2 14 2.9 14 4C14 4.74 13.6 5.39 13 5.73V7H14C16.76 7 19 9.24 19 12V13H21V15H19V16H21V18H19V20H17V18H15V20H13V18H11V20H9V18H7V20H5V18H3V16H5V15H3V13H5V12C5 9.24 7.24 7 10 7H11V5.73C10.4 5.39 10 4.74 10 4C10 2.9 10.9 2 12 2Z"/></svg><text x="90" y="538" font-size="13" fill="#ef4444" font-weight="500" font-family="monospace">id</text><text x="210" y="538" font-size="11" fill="#7c3aed" font-family="monospace">integer</text></g>
+<line x1="68" y1="552" x2="352" y2="552" 
+stroke="#f3f4f6" stroke-width="1"/>
+<g class="dbml-field-row" data-field="posts.user_id"><title>user_id: integer</title><text x="90" y="566" font-size="13" fill="#1f2937" font-weight="500" font-family="monospace">user_id</text><text x="210" y="566" font-size="11" fill="#7c3aed" font-family="monospace">integer</text></g>
+<line x1="68" y1="580" x2="352" y2="580" 
+stroke="#f3f4f6" stroke-width="1"/>
+<g class="dbml-field-row" data-field="posts.title"><title>title: varchar(200) | NOT NULL</title><text x="90" y="594" font-size="13" fill="#1f2937" font-weight="500" font-family="monospace">title</text><text x="210" y="594" font-size="11" fill="#7c3aed" font-family="monospace">varchar(200)</text><svg x="328" y="582" width="16" height="16" viewBox="0 0 24 24"><path fill="#f59e0b" d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M11,7H13V9H11V7M11,11H13V17H11V11Z"/></svg></g>
+<line x1="68" y1="608" x2="352" y2="608" 
+stroke="#f3f4f6" stroke-width="1"/>
+<g class="dbml-field-row" data-field="posts.content"><title>content: text</title><text x="90" y="622" font-size="13" fill="#1f2937" font-weight="500" font-family="monospace">content</text><text x="210" y="622" font-size="11" fill="#7c3aed" font-family="monospace">text</text></g>
+</g>
+<g class="dbml-table-group" data-table="comments">
+<rect x="560" y="480" width="300" height="177" 
+class="dbml-table-bg" fill="white" stroke="#e5e7eb" stroke-width="2" rx="8" filter="url(#shadow)"/>
+<defs><linearGradient id="gradient-a5d49106" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+<stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+</linearGradient></defs>
+<rect x="560" y="480" width="300" height="40" 
+class="dbml-table-header-bg" fill="url(#gradient-a5d49106)" rx="8"/>
+<rect x="560" y="515" width="300" height="10" fill="white"/>
+<text x="710.0" y="505" 
+class="dbml-table-title" text-anchor="middle" fill="white" 
+font-size="16" font-weight="600">comments</text>
+<line x1="560" y1="525" x2="860" y2="525" 
+stroke="#e5e7eb" stroke-width="1"/>
+<g class="dbml-field-row" data-field="comments.id"><title>id: integer | PRIMARY KEY</title><svg x="570" y="526" width="16" height="16" viewBox="0 0 24 24"><path fill="#ef4444" d="M12 2C13.1 2 14 2.9 14 4C14 4.74 13.6 5.39 13 5.73V7H14C16.76 7 19 9.24 19 12V13H21V15H19V16H21V18H19V20H17V18H15V20H13V18H11V20H9V18H7V20H5V18H3V16H5V15H3V13H5V12C5 9.24 7.24 7 10 7H11V5.73C10.4 5.39 10 4.74 10 4C10 2.9 10.9 2 12 2Z"/></svg><text x="590" y="538" font-size="13" fill="#ef4444" font-weight="500" font-family="monospace">id</text><text x="710" y="538" font-size="11" fill="#7c3aed" font-family="monospace">integer</text></g>
+<line x1="568" y1="552" x2="852" y2="552" 
+stroke="#f3f4f6" stroke-width="1"/>
+<g class="dbml-field-row" data-field="comments.post_id"><title>post_id: integer</title><text x="590" y="566" font-size="13" fill="#1f2937" font-weight="500" font-family="monospace">post_id</text><text x="710" y="566" font-size="11" fill="#7c3aed" font-family="monospace">integer</text></g>
+<line x1="568" y1="580" x2="852" y2="580" 
+stroke="#f3f4f6" stroke-width="1"/>
+<g class="dbml-field-row" data-field="comments.user_id"><title>user_id: integer</title><text x="590" y="594" font-size="13" fill="#1f2937" font-weight="500" font-family="monospace">user_id</text><text x="710" y="594" font-size="11" fill="#7c3aed" font-family="monospace">integer</text></g>
+<line x1="568" y1="608" x2="852" y2="608" 
+stroke="#f3f4f6" stroke-width="1"/>
+<g class="dbml-field-row" data-field="comments.content"><title>content: text | NOT NULL</title><text x="590" y="622" font-size="13" fill="#1f2937" font-weight="500" font-family="monospace">content</text><text x="710" y="622" font-size="11" fill="#7c3aed" font-family="monospace">text</text><svg x="828" y="610" width="16" height="16" viewBox="0 0 24 24"><path fill="#f59e0b" d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M11,7H13V9H11V7M11,11H13V17H11V11Z"/></svg></g>
+</g>
+</g>
+</svg>
+</div>
+    
+    <script>
+    
+        document.addEventListener('DOMContentLoaded', function() {
+            const wrappers = document.querySelectorAll('.dbml-diagram-wrapper');
+            
+            wrappers.forEach(wrapper => {
+                const diagram = wrapper.querySelector('.dbml-diagram');
+                if (!diagram) return;
+                
+                let scale = 1;
+                let translateX = 0;
+                let translateY = 0;
+                let isDraggingTable = false;
+                let draggedTable = null;
+                let dragStartX = 0;
+                let dragStartY = 0;
+                let tableStartX = 0;
+                let tableStartY = 0;
+                
+                const connectionData = new Map();
+                
+                diagram.style.transformOrigin = '0 0';
+                diagram.style.willChange = 'transform';
+                
+                const relationshipGroups = diagram.querySelectorAll('.dbml-relationship-group');
+                relationshipGroups.forEach(group => {
+                    const from = group.getAttribute('data-from');
+                    const to = group.getAttribute('data-to');
+                    const path = group.querySelector('path');
+                    const originalPath = path.getAttribute('d');
+                    
+                    connectionData.set(group, {
+                        from: from,
+                        to: to,
+                        originalPath: originalPath,
+                        path: path
+                    });
+                });
+                
+                const tableGroups = diagram.querySelectorAll('.dbml-table-group');
+                tableGroups.forEach(group => {
+                    group.style.cursor = 'move';
+                    group.style.willChange = 'transform';
+                    
+                    group.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        isDraggingTable = true;
+                        draggedTable = group;
+                        
+                        const transform = group.getAttribute('transform') || '';
+                        const match = transform.match(/translate\(([-\d.]+)[,\s]+([-\d.]+)\)/);
+                        if (match) {
+                            tableStartX = parseFloat(match[1]);
+                            tableStartY = parseFloat(match[2]);
+                        } else {
+                            tableStartX = 0;
+                            tableStartY = 0;
+                        }
+                        
+                        const rect = diagram.getBoundingClientRect();
+                        dragStartX = e.clientX;
+                        dragStartY = e.clientY;
+                    });
+                    
+                    group.addEventListener('mouseenter', () => {
+                        if (!isDraggingTable) {
+                            const tableName = group.getAttribute('data-table');
+                            highlightRelatedTables(diagram, tableName);
+                        }
+                    });
+                    
+                    group.addEventListener('mouseleave', () => {
+                        if (!isDraggingTable) {
+                            resetHighlight(diagram);
+                        }
+                    });
+                });
+                
+                let rafId = null;
+                diagram.addEventListener('mousemove', (e) => {
+                    if (isDraggingTable && draggedTable) {
+                        if (rafId) return;
+                        
+                        rafId = requestAnimationFrame(() => {
+                            const dx = (e.clientX - dragStartX) / scale;
+                            const dy = (e.clientY - dragStartY) / scale;
+                            
+                            const newX = tableStartX + dx;
+                            const newY = tableStartY + dy;
+                            
+                            draggedTable.setAttribute('transform', `translate(${newX}, ${newY})`);
+                            
+                            updateConnections(draggedTable, newX, newY);
+                            
+                            rafId = null;
+                        });
+                    }
+                });
+                
+                document.addEventListener('mouseup', () => {
+                    if (isDraggingTable) {
+                        isDraggingTable = false;
+                        draggedTable = null;
+                        if (rafId) {
+                            cancelAnimationFrame(rafId);
+                            rafId = null;
+                        }
+                    }
+                });
+                
+                wrapper.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    
+                    const delta = e.deltaY > 0 ? 0.92 : 1.08;
+                    const newScale = Math.max(0.3, Math.min(scale * delta, 3));
+                    
+                    const rect = wrapper.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+                    
+                    const scaleChange = newScale / scale;
+                    translateX = mouseX - (mouseX - translateX) * scaleChange;
+                    translateY = mouseY - (mouseY - translateY) * scaleChange;
+                    
+                    scale = newScale;
+                    
+                    diagram.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+                }, { passive: false });
+                
+                function updateConnections(movedTable, offsetX, offsetY) {
+                    const tableName = movedTable.getAttribute('data-table');
+                    
+                    connectionData.forEach((data, group) => {
+                        const fromTable = data.from.split('.')[0];
+                        const toTable = data.to.split('.')[0];
+                        
+                        if (fromTable === tableName || toTable === tableName) {
+                            const pathParts = data.originalPath.match(/M ([\d.]+) ([\d.]+) C ([\d.]+) ([\d.]+), ([\d.]+) ([\d.]+), ([\d.]+) ([\d.]+)/);
+                            if (pathParts) {
+                                let [, x1, y1, cx1, cy1, cx2, cy2, x2, y2] = pathParts.map(Number);
+                                
+                                if (fromTable === tableName) {
+                                    x1 += offsetX;
+                                    y1 += offsetY;
+                                    cx1 += offsetX;
+                                    cy1 += offsetY;
+                                }
+                                if (toTable === tableName) {
+                                    x2 += offsetX;
+                                    y2 += offsetY;
+                                    cx2 += offsetX;
+                                    cy2 += offsetY;
+                                }
+                                
+                                const newPath = `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`;
+                                data.path.setAttribute('d', newPath);
+                            }
+                        }
+                    });
+                }
+            });
+            
+            function highlightRelatedTables(diagram, tableName) {
+                const allGroups = diagram.querySelectorAll('.dbml-relationship-group');
+                
+                allGroups.forEach(group => {
+                    const from = group.getAttribute('data-from') || '';
+                    const to = group.getAttribute('data-to') || '';
+                    const line = group.querySelector('.dbml-relationship-line');
+                    
+                    if (from.startsWith(tableName + '.') || to.startsWith(tableName + '.')) {
+                        line.style.opacity = '1';
+                        line.style.strokeWidth = '3';
+                        line.style.strokeDasharray = 'none';
+                    } else {
+                        line.style.opacity = '0.15';
+                    }
+                });
+            }
+            
+            function resetHighlight(diagram) {
+                const allLines = diagram.querySelectorAll('.dbml-relationship-line');
+                allLines.forEach(line => {
+                    line.style.opacity = '0.7';
+                    line.style.strokeWidth = '2';
+                    line.style.strokeDasharray = '';
+                });
+            }
+        });
+        
+    </script>
+</body>
+</html>

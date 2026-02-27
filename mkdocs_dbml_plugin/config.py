@@ -1,0 +1,41 @@
+THEMES = {
+    "default": {
+        "gradient_start": "#667eea",
+        "gradient_end": "#764ba2",
+        "line_color": "#6366f1",
+        "bg_color": "#f9fafb",
+        "border_color": "#e5e7eb",
+    },
+    "ocean": {
+        "gradient_start": "#2E3192",
+        "gradient_end": "#1BFFFF",
+        "line_color": "#0ea5e9",
+        "bg_color": "#f0f9ff",
+        "border_color": "#bae6fd",
+    },
+    "sunset": {
+        "gradient_start": "#FA8BFF",
+        "gradient_end": "#2BD2FF",
+        "line_color": "#f43f5e",
+        "bg_color": "#fff1f2",
+        "border_color": "#fecdd3",
+    },
+    "forest": {
+        "gradient_start": "#134E5E",
+        "gradient_end": "#71B280",
+        "line_color": "#10b981",
+        "bg_color": "#f0fdf4",
+        "border_color": "#bbf7d0",
+    },
+    "dark": {
+        "gradient_start": "#4c1d95",
+        "gradient_end": "#7c3aed",
+        "line_color": "#818cf8",
+        "bg_color": "#1f2937",
+        "border_color": "#374151",
+    },
+}
+
+
+def get_theme_colors(theme_name="default"):
+    return THEMES.get(theme_name, THEMES["default"])

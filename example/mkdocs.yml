@@ -7,10 +7,13 @@ theme:
 plugins:
   - search
   - dbml:
-      theme: default
+      theme: dark
       show_indexes: true
       show_notes: true
 
 nav:
   - Главная: index.md
+  - Интерактивность: interactive.md
   - Примеры: examples.md
+  - Продвинутые: advanced.md
+  - Темы: themes.md
