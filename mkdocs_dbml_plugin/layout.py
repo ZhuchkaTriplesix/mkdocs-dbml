@@ -57,7 +57,6 @@ class GraphLayoutEngine:
                 layers.append([table])
 
         for layer_idx, layer in enumerate(layers):
-            layer_width = len(layer) * (col_width + h_spacing) - h_spacing
             start_x = padding
 
             for col_idx, table_name in enumerate(layer):
