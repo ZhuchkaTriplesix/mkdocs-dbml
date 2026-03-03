@@ -17,10 +17,9 @@ MkDocs plugin that renders [DBML](https://dbml.dbdiagram.io/) code blocks as int
 
 ### From source (local project)
 
-Clone or copy the plugin directory into your workspace, then install in editable mode:
-
 ```bash
-cd path/to/mkdocs-dbml-plugin
+git clone https://github.com/ZhuchkaTriplesix/mkdocs-dbml.git
+cd mkdocs-dbml
 pip install -e .
 ```
 
@@ -30,7 +29,6 @@ If you have a C compiler available (MSVC on Windows, gcc/clang on Linux/macOS):
 
 ```bash
 pip install cython
-cd path/to/mkdocs-dbml-plugin
 python setup.py build_ext --inplace
 pip install -e .
 ```
@@ -185,7 +183,7 @@ Full DBML specification: [dbml.dbdiagram.io/docs](https://dbml.dbdiagram.io/docs
 ## Project structure
 
 ```
-mkdocs-dbml-plugin/
+mkdocs-dbml/
 ├── setup.py                          # package config
 ├── requirements.txt
 ├── mkdocs_dbml_plugin/
