@@ -1,8 +1,8 @@
-# Продвинутые примеры
+# Advanced examples
 
-## Социальная сеть
+## Social network
 
-Сложная схема социальной сети с множеством связей:
+A social network schema with many relationships:
 
 ```dbml
 Table users {
@@ -14,7 +14,7 @@ Table users {
   avatar_url varchar(255)
   created_at timestamp
   
-  Note: 'Пользователи системы'
+  Note: 'System users'
 }
 
 Table posts {
@@ -25,7 +25,7 @@ Table posts {
   likes_count integer [default: 0]
   created_at timestamp
   
-  Note: 'Посты пользователей'
+  Note: 'User posts'
 }
 
 Table comments {
@@ -69,7 +69,7 @@ Table messages {
 }
 ```
 
-## Система онлайн-обучения
+## Online learning system
 
 ```dbml
 Table courses {
@@ -129,11 +129,11 @@ Table lesson_completions {
 }
 ```
 
-## Преимущества визуализации
+## Why visualize
 
-1. **Наглядность** - сразу видно структуру всей базы данных
-2. **Связи** - все foreign keys показаны линиями со стрелками
-3. **Типы связей** - 1:N, N:1, 1:1, N:M отображаются на линиях
-4. **Интерактивность** - наведение на таблицу подсвечивает её связи
-5. **Масштабирование** - можно увеличить/уменьшить диаграмму
-6. **Профессиональный вид** - как в dbdiagram.io или Lucidchart
+1. **Clarity** — see the full database structure at a glance
+2. **Relationships** — all foreign keys shown as lines with markers
+3. **Cardinality** — 1:N, N:1, 1:1, N:M shown on the lines
+4. **Interactivity** — hover a table to highlight its relationships
+5. **Zoom** — scale the diagram in and out
+6. **Professional look** — similar to dbdiagram.io or Lucidchart
