@@ -16,7 +16,7 @@ except ImportError:
 
 setup(
     name="mkdocs-dbml-plugin",
-    version="0.1.0",
+    version="1.0.0",
     author="ZhuchkaTriplesix",
     author_email="mrlololoshka94@gmail.com",
     description="MkDocs plugin to render DBML as interactive ERD diagrams",
@@ -26,7 +26,7 @@ setup(
     packages=find_packages(),
     ext_modules=ext_modules,
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Topic :: Documentation",
         "Topic :: Text Processing :: Markup",
