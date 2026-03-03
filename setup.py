@@ -36,6 +36,7 @@ setup(
     python_requires=">=3.9",
     install_requires=[
         "mkdocs>=1.0.0",
+        "numpy>=1.20.0",
         "pydbml>=1.0.0",
     ],
     entry_points={
