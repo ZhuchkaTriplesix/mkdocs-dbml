@@ -44,7 +44,13 @@ class DbmlRenderer:
             "<!-- dbml-styles -->",
             f'<div class="dbml-diagram-wrapper" id="dbml-{diagram_id}">',
         ]
-
+        html_parts.append(
+            '<div class="dbml-controls">'
+            '<button type="button" class="dbml-fullscreen-btn" title="Fullscreen" aria-label="Fullscreen">'
+            '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+            '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>'
+            '</svg></button></div>'
+        )
         html_parts.append('<div class="dbml-legend">')
         html_parts.append('<div class="dbml-legend-item">')
         html_parts.append(
@@ -451,35 +457,41 @@ class DbmlRenderer:
             display: flex;
             gap: 0.5rem;
             z-index: 10;
+            pointer-events: none;
         }
         
-        .dbml-zoom-btn {
+        .dbml-fullscreen-btn {
+            pointer-events: auto;
             background: white;
             border: none;
-            border-radius: 50%;
+            border-radius: 8px;
             width: 40px;
             height: 40px;
             cursor: pointer;
-            font-size: 16px;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            padding: 0;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background 0.2s, transform 0.2s;
+            color: #4b5563;
         }
         
-        .dbml-zoom-btn:hover {
+        .dbml-fullscreen-btn:hover {
             background: #6366f1;
-            transform: translateY(-2px) scale(1.05);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+            color: white;
+            transform: scale(1.05);
         }
         
-        .dbml-zoom-btn:hover::after {
-            filter: brightness(0) invert(1);
+        .dbml-diagram-wrapper:fullscreen {
+            height: 100vh !important;
+            width: 100vw;
+            border-radius: 0;
+            max-height: none;
         }
         
-        .dbml-zoom-btn:active {
-            transform: translateY(0) scale(0.95);
+        .dbml-diagram-wrapper::backdrop {
+            background: #0f172a;
         }
         
         .dbml-legend {
@@ -609,9 +621,9 @@ class DbmlRenderer:
                 right: 0.5rem;
             }
             
-            .dbml-zoom-btn {
-                padding: 0.375rem 0.5rem;
-                font-size: 12px;
+            .dbml-fullscreen-btn {
+                width: 36px;
+                height: 36px;
             }
             
             .dbml-legend {
@@ -636,13 +648,12 @@ class DbmlRenderer:
                 color: #e5e7eb;
             }
             
-            .dbml-zoom-btn {
+            .dbml-fullscreen-btn {
                 background: rgba(31, 41, 55, 0.95);
-                backdrop-filter: blur(10px);
                 color: #e5e7eb;
             }
             
-            .dbml-zoom-btn:hover {
+            .dbml-fullscreen-btn:hover {
                 background: #818cf8;
             }
             
