@@ -49,7 +49,7 @@ class DbmlRenderer:
             '<button type="button" class="dbml-fullscreen-btn" title="Fullscreen" aria-label="Fullscreen">'
             '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
             '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>'
-            '</svg></button></div>'
+            "</svg></button></div>"
         )
         html_parts.append('<div class="dbml-legend">')
         html_parts.append('<div class="dbml-legend-item">')
@@ -231,7 +231,9 @@ class DbmlRenderer:
 
         svg.append(f'<text x="{x + width / 2}" y="{y + 28}" ')
         title_fill = "#fafafa" if is_dark and self.theme == "black" else "white"
-        svg.append(f'class="dbml-table-title" text-anchor="middle" fill="{title_fill}" ')
+        svg.append(
+            f'class="dbml-table-title" text-anchor="middle" fill="{title_fill}" '
+        )
         svg.append(
             f'font-size="16" font-weight="600">{self._escape_html(table.name)}</text>'
         )
