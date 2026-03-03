@@ -414,10 +414,6 @@ class DbmlRenderer:
 
         return "".join(svg)
 
-    def _get_relationship_symbol(self, ref_type: str) -> str:
-        mapping = {">": "1:N", "<": "N:1", "-": "1:1", "<>": "N:M"}
-        return mapping.get(ref_type, ref_type)
-
     def _escape_html(self, text: str) -> str:
         return (
             text.replace("&", "&amp;")
