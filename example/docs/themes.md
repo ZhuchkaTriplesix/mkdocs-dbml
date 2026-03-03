@@ -1,10 +1,10 @@
-# Темы оформления
+# Color themes
 
-Плагин поддерживает несколько цветовых тем для диаграмм. Выберите ту, которая подходит к дизайну вашей документации!
+The plugin supports several color themes for diagrams. Pick one that fits your documentation!
 
-## Default (по умолчанию)
+## Default
 
-Классическая фиолетовая тема с градиентом от индиго до пурпурного.
+Classic purple theme with a gradient from indigo to purple.
 
 ```dbml
 Table users {
@@ -20,33 +20,33 @@ Table posts {
 }
 ```
 
-## Как изменить тему
+## How to change the theme
 
-В `mkdocs.yml`:
+In `mkdocs.yml`:
 
 ```yaml
 plugins:
   - dbml:
-      theme: ocean  # выберите: default, ocean, sunset, forest, dark
+      theme: ocean  # choose: default, ocean, sunset, forest, dark, dark_gray, black
 ```
 
-## Доступные темы
+## Available themes
 
-### 🌊 Ocean (Океан)
-Голубая морская тема - идеальна для технической документации.
+### 🌊 Ocean
+Blue sea theme — great for technical documentation.
 
-### 🌅 Sunset (Закат)
-Розово-голубой градиент - яркая и современная тема.
+### 🌅 Sunset
+Pink-to-blue gradient — bright and modern.
 
-### 🌲 Forest (Лес)
-Зеленая природная тема - спокойная и профессиональная.
+### 🌲 Forest
+Green theme — calm and professional.
 
-### 🌙 Dark (Темная)
-Темная тема для dark mode интерфейсов.
+### 🌙 Dark / Dark gray / Black
+Dark themes for dark-mode UIs.
 
-## Кастомизация
+## Customization
 
-Хотите свою тему? Легко! Отредактируйте `mkdocs_dbml_plugin/config.py`:
+Want your own theme? Edit `mkdocs_dbml_plugin/config.py`:
 
 ```python
 THEMES = {
@@ -60,7 +60,7 @@ THEMES = {
 }
 ```
 
-Затем используйте:
+Then use it:
 
 ```yaml
 plugins:
@@ -68,12 +68,12 @@ plugins:
       theme: my_theme
 ```
 
-## Советы по выбору темы
+## Choosing a theme
 
-- **Default** - универсальная, подходит для любой документации
-- **Ocean** - для технических проектов, API документации
-- **Sunset** - для креативных проектов, стартапов
-- **Forest** - для корпоративной документации
-- **Dark** - для dark mode сайтов
+- **Default** — universal, works for any docs
+- **Ocean** — technical projects, API docs
+- **Sunset** — creative projects, startups
+- **Forest** — corporate documentation
+- **Dark** — dark-mode sites
 
-Все темы адаптивны и хорошо смотрятся на любых экранах!
+All themes are responsive and look good on any screen.

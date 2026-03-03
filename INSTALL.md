@@ -1,52 +1,52 @@
-# Инструкция по установке и использованию
+# Installation and usage
 
-## Установка для разработки
+## Development setup
 
-1. Клонируйте репозиторий:
+1. Clone the repository:
 ```bash
-git clone <your-repo-url>
-cd dbml
+git clone https://github.com/ZhuchkaTriplesix/mkdocs-dbml.git
+cd mkdocs-dbml
 ```
 
-2. Установите зависимости:
+2. Install dependencies (optional; pip will install runtime deps):
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Установите плагин в режиме разработки:
+3. Install the plugin in development mode:
 ```bash
 pip install -e .
 ```
 
-## Тестирование с примером
+## Testing with the example
 
-1. Перейдите в директорию с примером:
+1. Go to the example directory:
 ```bash
 cd example
 ```
 
-2. Запустите MkDocs сервер:
+2. Start the MkDocs server:
 ```bash
 mkdocs serve
 ```
 
-3. Откройте браузер по адресу `http://127.0.0.1:8000`
+3. Open your browser at `http://127.0.0.1:8000`
 
-## Использование в вашем проекте
+## Using in your project
 
-1. Установите плагин:
+1. Install the plugin:
 ```bash
 pip install mkdocs-dbml-plugin
 ```
 
-2. Добавьте в `mkdocs.yml`:
+2. Add to `mkdocs.yml`:
 ```yaml
 plugins:
   - search
   - dbml
 ```
 
-3. Используйте DBML в markdown:
+3. Use DBML in markdown:
 ````markdown
 ```dbml
 Table users {
@@ -57,24 +57,24 @@ Table users {
 ```
 ````
 
-## Настройка
+## Configuration
 
-Доступные параметры конфигурации:
+Available options:
 
 ```yaml
 plugins:
   - dbml:
-      theme: default  # default или dark
-      show_indexes: true  # показывать индексы
-      show_notes: true  # показывать заметки
+      theme: default   # default, ocean, sunset, forest, dark, dark_gray, black
+      show_indexes: true
+      show_notes: true
 ```
 
-## Публикация пакета
+## Publishing the package
 
-Для публикации на PyPI:
+To publish to PyPI:
 
 ```bash
-python setup.py sdist bdist_wheel
-pip install twine
+pip install build twine
+python -m build
 twine upload dist/*
 ```

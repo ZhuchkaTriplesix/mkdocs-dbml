@@ -199,7 +199,7 @@ Full DBML specification: [dbml.dbdiagram.io/docs](https://dbml.dbdiagram.io/docs
 |--------|-----|
 | **Move a table** | Click and drag the table |
 | **Pan the canvas** | Click and drag empty space |
-| **Zoom** | Mouse wheel (30% – 300%) |
+| **Zoom** | Mouse wheel (10% – 300%) |
 | **Fullscreen** | Click the expand button (top-right), Esc to exit |
 | **Highlight connections** | Hover over a table |
 | **Select a line** | Click on any relationship line |
@@ -225,6 +225,16 @@ mkdocs-dbml/
     └── docs/
         └── *.md
 ```
+
+## Publishing to PyPI (maintainers)
+
+```bash
+pip install build twine
+python -m build
+twine upload dist/*
+```
+
+Use an API token from [pypi.org/manage/account](https://pypi.org/manage/account/) (env `TWINE_USERNAME=__token__`, `TWINE_PASSWORD=<token>`).
 
 ## License
 

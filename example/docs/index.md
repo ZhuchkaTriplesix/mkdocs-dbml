@@ -1,18 +1,18 @@
-# MkDocs DBML Plugin - Демонстрация
+# MkDocs DBML Plugin — Demo
 
-Добро пожаловать! Этот плагин позволяет встраивать **красивые визуальные ERD-диаграммы** баз данных прямо в вашу документацию MkDocs.
+Welcome! This plugin lets you embed **visual ERD diagrams** of your database directly into your MkDocs documentation.
 
-Диаграммы отображаются в стиле Mermaid/dbdiagram.io с:
-- Таблицами в виде карточек с градиентными заголовками
-- **Связями от поля к полю** - линии идут точно от FK-поля к PK-полю
-- **Material Design 3 иконками** - современные SVG-иконки
-- **Drag & Drop** - перетаскивайте таблицы мышкой
-- **Zoom колесиком** - масштабируйте диаграмму
-- Интерактивными hover-эффектами и подсветкой связей
+Diagrams are rendered in a Mermaid/dbdiagram.io style with:
+- Tables as cards with gradient headers
+- **Field-to-field relationships** — lines run from the exact FK field to the exact PK field
+- **Material Design 3 icons** — modern SVG icons
+- **Drag & Drop** — drag tables with the mouse
+- **Mouse wheel zoom** — scale the diagram
+- Interactive hover effects and relationship highlighting
 
-## Простой пример
+## Simple example
 
-Вот простая схема блога:
+Here is a simple blog schema:
 
 ```dbml
 Table users {
@@ -21,7 +21,7 @@ Table users {
   email varchar(100) [not null]
   created_at timestamp [default: `now()`]
   
-  Note: 'Таблица пользователей системы'
+  Note: 'System users table'
 }
 
 Table posts {
@@ -37,7 +37,7 @@ Table posts {
     (user_id, created_at)
   }
   
-  Note: 'Посты пользователей'
+  Note: 'User posts'
 }
 
 Table comments {
@@ -47,52 +47,52 @@ Table comments {
   content text [not null]
   created_at timestamp
   
-  Note: 'Комментарии к постам'
+  Note: 'Post comments'
 }
 ```
 
-## Возможности
+## Features
 
-- ✅ **Визуальные ERD-диаграммы** с SVG-графикой
-- ✅ **Связи от поля к полю** - линии идут точно от FK к PK
-- ✅ **Material Design 3 иконки** - современные SVG-иконки
-- ✅ **Drag & Drop таблиц** - перетаскивайте мышкой
-- ✅ **Zoom колесиком мыши** - плавное масштабирование
-- ✅ Автоматический парсинг DBML
-- ✅ Умная компоновка на основе графов
-- ✅ Градиентные заголовки (5 цветовых тем)
-- ✅ Интерактивность: hover-эффекты, подсветка связей
-- ✅ Tooltips с полной информацией о полях
-- ✅ Легенда с Material Design иконками
-- ✅ Адаптивный дизайн для всех устройств
-- ✅ Поддержка темной темы с автоопределением
+- ✅ **Visual ERD diagrams** with SVG graphics
+- ✅ **Field-to-field relationships** — lines run from FK to PK
+- ✅ **Material Design 3 icons** — modern SVG icons
+- ✅ **Drag & drop tables** — move them with the mouse
+- ✅ **Mouse wheel zoom** — smooth scaling
+- ✅ Automatic DBML parsing
+- ✅ Graph-based layout algorithm
+- ✅ Gradient headers (multiple color themes)
+- ✅ Interactivity: hover effects, relationship highlighting
+- ✅ Tooltips with full field information
+- ✅ Legend with Material Design icons
+- ✅ Responsive design for all devices
+- ✅ Dark theme support with auto-detection
 
-## Как это работает
+## How it works
 
-1. Вы пишете DBML-код в markdown-блоке
-2. Плагин парсит DBML и извлекает таблицы, поля и связи
-3. Алгоритм на основе графов рассчитывает оптимальное расположение таблиц
-4. Генерируется SVG-диаграмма с точными позициями полей
-5. **Связи рисуются от конкретного поля FK к конкретному полю PK**
-6. Добавляются Material Design иконки и интерактивные эффекты
-7. JavaScript обеспечивает drag & drop и zoom колесиком
+1. You write DBML in a markdown code block
+2. The plugin parses DBML and extracts tables, fields, and relationships
+3. A graph-based algorithm computes table positions
+4. An SVG diagram is generated with exact field positions
+5. **Relationships are drawn from the specific FK field to the specific PK field**
+6. Material Design icons and interactive effects are added
+7. JavaScript handles drag & drop and mouse wheel zoom
 
-## Интерактивность
+## Interactivity
 
-**Попробуйте:**
-- 🖱️ **Перетащите таблицу** - зажмите левую кнопку мыши на таблице и двигайте
-- 🔍 **Масштабируйте** - крутите колесико мыши для zoom in/out
-- ✨ **Наведите на таблицу** - увидите подсветку всех её связей
-- 💡 **Наведите на поле** - появится tooltip с полной информацией
+**Try it:**
+- 🖱️ **Drag a table** — click and hold on a table, then move
+- 🔍 **Zoom** — use the mouse wheel to zoom in/out
+- ✨ **Hover a table** — see all its relationships highlighted
+- 💡 **Hover a field** — a tooltip shows full information
 
-Смотрите больше примеров на странице [Примеры](examples.md).
+See more examples on the [Examples](examples.md) page.
 
-## Вставка из файла .dbml
+## Including a .dbml file
 
-Можно подключать нативный файл `.dbml` — путь указывается относительно каталога `docs`:
+You can reference a native `.dbml` file — the path is relative to the `docs` directory:
 
 ```dbml
 schema.dbml
 ```
 
-Диаграмма выше отрисована из файла `docs/schema.dbml`.
+The diagram above is rendered from `docs/schema.dbml`.

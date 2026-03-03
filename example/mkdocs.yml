@@ -1,5 +1,5 @@
 site_name: DBML Plugin Demo
-site_description: Демонстрация плагина MkDocs для рендеринга DBML
+site_description: MkDocs plugin for rendering DBML as interactive ERD diagrams
 
 theme:
   name: readthedocs
@@ -12,8 +12,8 @@ plugins:
       show_notes: true
 
 nav:
-  - Главная: index.md
-  - Интерактивность: interactive.md
-  - Примеры: examples.md
-  - Продвинутые: advanced.md
-  - Темы: themes.md
+  - Home: index.md
+  - Interactivity: interactive.md
+  - Examples: examples.md
+  - Advanced: advanced.md
+  - Themes: themes.md

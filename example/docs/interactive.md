@@ -1,64 +1,64 @@
-# Интерактивные возможности
+# Interactive features
 
-Этот плагин не просто показывает статичные картинки - он создает **полностью интерактивные диаграммы**!
+This plugin doesn’t just show static images — it builds **fully interactive diagrams**!
 
-## 🖱️ Drag & Drop таблиц
+## 🖱️ Drag & drop tables
 
-Вы можете **перетаскивать таблицы** мышкой для удобного расположения:
+You can **drag tables** with the mouse to arrange them:
 
-1. Наведите курсор на любую таблицу
-2. Зажмите левую кнопку мыши
-3. Перетащите таблицу в нужное место
-4. Отпустите кнопку
+1. Move the cursor over any table
+2. Click and hold the left mouse button
+3. Drag the table where you want it
+4. Release the button
 
-Связи автоматически перерисовываются при перемещении!
+Relationships are redrawn automatically when you move tables!
 
-## 🔍 Zoom колесиком мыши
+## 🔍 Mouse wheel zoom
 
-**Плавное масштабирование** с фокусом на позицию курсора:
+**Smooth zoom** centered on the cursor:
 
-- **Крутите колесико вверх** - приближение (zoom in)
-- **Крутите колесико вниз** - отдаление (zoom out)
-- Масштаб: от 30% до 300%
-- Фокус на позиции курсора (как в Google Maps)
+- **Scroll up** — zoom in
+- **Scroll down** — zoom out
+- Scale range: 10% to 300%
+- Zoom is centered on the cursor (like Google Maps)
 
-Альтернатива - круглые кнопки в правом верхнем углу.
+You can also use the round buttons in the top-right corner.
 
-## ✨ Подсветка связей
+## ✨ Relationship highlighting
 
-При наведении на таблицу:
-- Все её связи становятся **яркими и толстыми**
-- Остальные связи становятся **полупрозрачными**
-- Легко увидеть, с какими таблицами связана текущая
+When you hover a table:
+- All its relationships become **bright and thick**
+- Other relationships become **semi-transparent**
+- Easy to see which tables the current one is connected to
 
-## 💡 Tooltips на полях
+## 💡 Field tooltips
 
-Наведите курсор на любое поле - появится tooltip с:
-- Именем поля и типом данных
-- Списком всех атрибутов (PRIMARY KEY, NOT NULL, UNIQUE, DEFAULT)
-- Полной информацией в одной строке
+Hover over any field to see a tooltip with:
+- Field name and data type
+- All attributes (PRIMARY KEY, NOT NULL, UNIQUE, DEFAULT)
+- Full information in one line
 
-## 🎯 Связи от поля к полю
+## 🎯 Field-to-field relationships
 
-В отличие от других инструментов, где связи идут от центра таблицы:
-- Линии идут **от конкретного FK-поля**
-- К **конкретному PK-полю**
-- Это делает диаграмму **намного понятнее**
-- Сразу видно, какие именно поля связаны
+Unlike tools where lines go from the center of a table:
+- Lines go **from the specific FK field**
+- **To the specific PK field**
+- The diagram is **much clearer**
+- You can see exactly which fields are related
 
 ## 🎨 Material Design 3
 
-Все иконки выполнены в стиле Material Design 3:
-- 🔑 **Key icon** для Primary Keys
-- 🔗 **Link icon** для Foreign Keys  
-- ℹ️ **Info icon** для NOT NULL
-- ✓ **Check icon** для UNIQUE
+All icons follow Material Design 3:
+- 🔑 **Key icon** for Primary Keys
+- 🔗 **Link icon** for Foreign Keys
+- ℹ️ **Info icon** for NOT NULL
+- ✓ **Check icon** for UNIQUE
 
-Иконки векторные (SVG), масштабируются без потери качества.
+Icons are vector (SVG) and scale without quality loss.
 
-## Пример для тестирования
+## Example to try
 
-Попробуйте все возможности на этой диаграмме:
+Try all features on this diagram:
 
 ```dbml
 Table users {
@@ -68,7 +68,7 @@ Table users {
   password_hash varchar(255) [not null]
   created_at timestamp
   
-  Note: 'Пользователи системы'
+  Note: 'System users'
 }
 
 Table posts {
@@ -80,7 +80,7 @@ Table posts {
   views_count integer [default: 0]
   created_at timestamp
   
-  Note: 'Посты пользователей'
+  Note: 'User posts'
 }
 
 Table comments {
@@ -90,7 +90,7 @@ Table comments {
   content text [not null]
   created_at timestamp
   
-  Note: 'Комментарии к постам'
+  Note: 'Post comments'
 }
 
 Table likes {
@@ -103,37 +103,37 @@ Table likes {
     (user_id, post_id) [unique]
   }
   
-  Note: 'Лайки на посты'
+  Note: 'Post likes'
 }
 ```
 
-## Задания для практики
+## Practice tasks
 
-Попробуйте:
+Try:
 
-1. **Перетащите** таблицу `users` в центр диаграммы
-2. **Приблизьте** диаграмму колесиком до 150-200%
-3. **Наведите** на таблицу `posts` - увидите её связи с `users`, `comments` и `likes`
-4. **Наведите** на поле `user_id` в таблице `posts` - увидите tooltip
-5. **Проследите** линию от `posts.user_id` к `users.id` - она идет точно от поля к полю!
+1. **Drag** the `users` table to the center of the diagram
+2. **Zoom in** with the wheel to about 150–200%
+3. **Hover** the `posts` table — see its relationships to `users`, `comments`, and `likes`
+4. **Hover** the `user_id` field in `posts` — see the tooltip
+5. **Follow** the line from `posts.user_id` to `users.id` — it goes exactly from field to field!
 
-## Технические детали
+## Technical details
 
-### Drag & Drop
-- Использует SVG `transform="translate(x, y)"`
-- Сохраняет позицию при масштабировании
-- Плавная анимация с `cubic-bezier(0.4, 0, 0.2, 1)`
+### Drag & drop
+- Uses SVG `transform="translate(x, y)"`
+- Position is preserved when zooming
+- Smooth animation with `cubic-bezier(0.4, 0, 0.2, 1)`
 
 ### Zoom
-- Масштабирование относительно позиции курсора
-- Диапазон: 0.3x - 3.0x
-- Шаг: 10% при каждом движении колесика
-- Пересчет позиции для сохранения фокуса
+- Zoom centered on cursor position
+- Range: 0.1x – 3.0x
+- Step: 10% per wheel tick
+- Position recalculated to keep focus
 
-### Связи
-- Рассчитываются позиции каждого поля
-- Линия идет от правого края FK-поля к левому краю PK-поля
-- Bezier-кривые для плавных изгибов
-- Автоматический выбор маркеров (стрелки, круги)
+### Relationships
+- Position of each field is computed
+- Line runs from the right edge of the FK field to the left edge of the PK field
+- Bezier curves for smooth bends
+- Automatic choice of markers (arrows, circles)
 
-Наслаждайтесь интерактивными диаграммами! 🎉
+Enjoy the interactive diagrams! 🎉

@@ -46,6 +46,10 @@ class DbmlRenderer:
         ]
         html_parts.append(
             '<div class="dbml-controls">'
+            '<button type="button" class="dbml-export-btn dbml-export-svg-btn" title="Export SVG" aria-label="Export SVG">'
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>'
+            '<button type="button" class="dbml-export-btn dbml-export-png-btn" title="Export PNG" aria-label="Export PNG">'
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>'
             '<button type="button" class="dbml-fullscreen-btn" title="Fullscreen" aria-label="Fullscreen">'
             '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
             '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>'
@@ -176,6 +180,13 @@ class DbmlRenderer:
 
         svg_parts.append("</defs>")
 
+        table_groups = getattr(parsed, "table_groups", None) or []
+        if table_groups:
+            svg_parts.append('<g class="dbml-tablegroups-layer">')
+            for tg in table_groups:
+                svg_parts.append(self._render_table_group(tg))
+            svg_parts.append("</g>")
+
         if parsed.refs:
             svg_parts.append('<g class="dbml-relationships-layer">')
             for ref in parsed.refs:
@@ -190,6 +201,46 @@ class DbmlRenderer:
         svg_parts.append("</svg>")
 
         return "\n".join(svg_parts)
+
+    def _render_table_group(self, tg) -> str:
+        """Draw a rounded rect behind tables belonging to this TableGroup."""
+        names = []
+        for item in tg.items:
+            names.append(item.name if hasattr(item, "name") else item)
+        positions = self.table_positions
+        dimensions = self.table_dimensions
+        box_tables = [
+            (positions[n], dimensions[n])
+            for n in names
+            if n in positions and n in dimensions
+        ]
+        if not box_tables:
+            return ""
+        pad = 24
+        min_x = min(p[0][0] for p in box_tables) - pad
+        min_y = min(p[0][1] for p in box_tables) - pad
+        max_x = max(p[0][0] + p[1][0] for p in box_tables) + pad
+        max_y = max(p[0][1] + p[1][1] for p in box_tables) + pad
+        gx, gy = min_x, min_y
+        gw, gh = max_x - min_x, max_y - min_y
+        is_dark = self.theme in ("dark", "dark_gray", "black")
+        fill = "rgba(99, 102, 241, 0.06)" if not is_dark else "rgba(255, 255, 255, 0.04)"
+        stroke = "#c7d2fe" if not is_dark else "rgba(255, 255, 255, 0.15)"
+        label = self._escape_html(tg.name)
+        svg = []
+        svg.append(
+            f'<g class="dbml-tablegroup" data-group-name="{self._escape_html(tg.name)}">'
+        )
+        svg.append(
+            f'<rect x="{gx}" y="{gy}" width="{gw}" height="{gh}" rx="12" ry="12" '
+            f'fill="{fill}" stroke="{stroke}" stroke-width="1.5"/>'
+        )
+        svg.append(
+            f'<text x="{gx + 14}" y="{gy + 18}" font-size="11" fill="{stroke}" '
+            f'font-weight="600" font-family="sans-serif">{label}</text>'
+        )
+        svg.append("</g>")
+        return "".join(svg)
 
     def _render_svg_table(self, table) -> str:
         x, y = self.table_positions[table.name]
@@ -230,18 +281,18 @@ class DbmlRenderer:
         )
 
         svg.append(f'<text x="{x + width / 2}" y="{y + 28}" ')
-        title_fill = "#fafafa" if is_dark and self.theme == "black" else "white"
+        title_fill = "#ffffff" if self.theme == "black" else ("white" if not is_dark else "#fafafa")
         svg.append(
             f'class="dbml-table-title" text-anchor="middle" fill="{title_fill}" '
         )
         svg.append(
-            f'font-size="16" font-weight="600">{self._escape_html(table.name)}</text>'
+            f'font-size="16" font-weight="700">{self._escape_html(table.name)}</text>'
         )
 
         current_y = y + 66
         for idx, column in enumerate(table.columns):
             if idx > 0:
-                sep_color = "#374151" if is_dark else "#f3f4f6"
+                sep_color = "#1f1f1f" if self.theme == "black" else ("#374151" if is_dark else "#f3f4f6")
                 svg.append(
                     f'<line x1="{x + 8}" y1="{current_y - 18}" x2="{x + width - 8}" y2="{current_y - 18}" '
                 )
@@ -256,8 +307,8 @@ class DbmlRenderer:
     def _render_svg_field(self, column, x, y, width, table) -> str:
         svg = []
         is_dark = self.theme in ("dark", "dark_gray", "black")
-        name_color = "#e5e7eb" if is_dark else "#1f2937"
-        type_color = "#a5b4fc" if is_dark else "#7c3aed"
+        name_color = "#f5f5f5" if self.theme == "black" else ("#e5e7eb" if is_dark else "#1f2937")
+        type_color = "#c4b5fd" if self.theme == "black" else ("#a5b4fc" if is_dark else "#7c3aed")
         is_fk = False
 
         for ref in getattr(table, "_refs", []):
@@ -287,10 +338,11 @@ class DbmlRenderer:
         svg.append(f"<title>{self._escape_html(tooltip)}</title>")
 
         icon_x = x + 10
-        text_x = x + 30
+        name_center_x = x + (30 + 148) / 2
+        type_center_x = x + (150 + width - 60) / 2
 
         if column.pk:
-            name_color = "#f87171" if is_dark else "#ef4444"
+            name_color = "#fca5a5" if self.theme == "black" else ("#f87171" if is_dark else "#ef4444")
             svg.append(
                 f'<svg x="{icon_x}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
             )
@@ -299,7 +351,7 @@ class DbmlRenderer:
             )
             svg.append("</svg>")
         elif is_fk:
-            name_color = "#34d399" if is_dark else "#10b981"
+            name_color = "#6ee7b7" if self.theme == "black" else ("#34d399" if is_dark else "#10b981")
             svg.append(
                 f'<svg x="{icon_x}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
             )
@@ -309,7 +361,7 @@ class DbmlRenderer:
             svg.append("</svg>")
 
         svg.append(
-            f'<text x="{text_x}" y="{y}" font-size="13" fill="{name_color}" font-weight="500" font-family="monospace">'
+            f'<text x="{name_center_x}" y="{y}" text-anchor="middle" font-size="13" fill="{name_color}" font-weight="600" font-family="monospace">'
         )
         svg.append(f"{self._escape_html(column.name)}</text>")
 
@@ -318,7 +370,7 @@ class DbmlRenderer:
             type_text = type_text[:12] + "..."
 
         svg.append(
-            f'<text x="{x + 150}" y="{y}" font-size="11" fill="{type_color}" font-family="monospace">'
+            f'<text x="{type_center_x}" y="{y}" text-anchor="middle" font-size="11" fill="{type_color}" font-weight="600" font-family="monospace">'
         )
         svg.append(f"{self._escape_html(type_text)}</text>")
 
@@ -462,6 +514,28 @@ class DbmlRenderer:
             pointer-events: none;
         }
         
+        .dbml-export-btn {
+            pointer-events: auto;
+            background: white;
+            border: none;
+            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: background 0.2s, color 0.2s;
+            color: #4b5563;
+        }
+        
+        .dbml-export-btn:hover {
+            background: #6366f1;
+            color: white;
+        }
+        
         .dbml-fullscreen-btn {
             pointer-events: auto;
             background: white;
@@ -498,29 +572,31 @@ class DbmlRenderer:
         
         .dbml-legend {
             position: absolute;
-            bottom: 1.5rem;
-            left: 1.5rem;
+            bottom: 0.75rem;
+            left: 0.75rem;
             background: white;
             border: none;
-            border-radius: 12px;
-            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            padding: 0.4rem 0.6rem;
             display: flex;
-            gap: 1.5rem;
-            font-size: 13px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+            gap: 0.6rem;
+            font-size: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
             z-index: 10;
         }
         
         .dbml-legend-item {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.3rem;
             color: #4b5563;
             font-weight: 500;
         }
         
         .dbml-legend-item svg {
             flex-shrink: 0;
+            width: 12px;
+            height: 12px;
         }
         
         .dbml-legend-item span {
@@ -534,6 +610,10 @@ class DbmlRenderer:
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             will-change: transform;
             transform-origin: 0 0;
+            pointer-events: none;
+        }
+        
+        .dbml-tablegroups-layer {
             pointer-events: none;
         }
         
@@ -552,12 +632,17 @@ class DbmlRenderer:
             cursor: help;
         }
         
-        .dbml-field-row:hover text {
+        .dbml-field-row text {
             font-weight: 600;
+        }
+        
+        .dbml-field-row:hover text {
+            font-weight: 700;
         }
         
         .dbml-table-title {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 700;
             user-select: none;
         }
         
@@ -648,6 +733,15 @@ class DbmlRenderer:
             
             .dbml-legend-item {
                 color: #e5e7eb;
+            }
+            
+            .dbml-export-btn {
+                background: rgba(31, 41, 55, 0.95);
+                color: #e5e7eb;
+            }
+            
+            .dbml-export-btn:hover {
+                background: #818cf8;
             }
             
             .dbml-fullscreen-btn {

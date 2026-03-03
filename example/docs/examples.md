@@ -1,8 +1,8 @@
-# Примеры использования
+# Usage examples
 
-## E-commerce система
+## E-commerce system
 
-Более сложный пример с интернет-магазином:
+A more complex example for an online store:
 
 ```dbml
 Table customers {
@@ -17,7 +17,7 @@ Table customers {
     email [unique]
   }
   
-  Note: 'Клиенты магазина'
+  Note: 'Store customers'
 }
 
 Table products {
@@ -34,7 +34,7 @@ Table products {
     name
   }
   
-  Note: 'Каталог товаров'
+  Note: 'Product catalog'
 }
 
 Table categories {
@@ -42,7 +42,7 @@ Table categories {
   name varchar(100) [not null, unique]
   parent_id integer [ref: > categories.id]
   
-  Note: 'Категории товаров (поддержка вложенности)'
+  Note: 'Product categories (supports nesting)'
 }
 
 Table orders {
@@ -59,7 +59,7 @@ Table orders {
     status
   }
   
-  Note: 'Заказы клиентов'
+  Note: 'Customer orders'
 }
 
 Table order_items {
@@ -73,7 +73,7 @@ Table order_items {
     (order_id, product_id) [unique]
   }
   
-  Note: 'Позиции в заказах'
+  Note: 'Order line items'
 }
 
 Table reviews {
@@ -89,11 +89,11 @@ Table reviews {
     customer_id
   }
   
-  Note: 'Отзывы на товары'
+  Note: 'Product reviews'
 }
 ```
 
-## Система управления задачами
+## Task management system
 
 ```dbml
 Table projects {
@@ -139,9 +139,9 @@ Table task_comments {
 }
 ```
 
-## Преимущества
+## Benefits
 
-1. **Наглядность** - схема базы данных отображается прямо в документации
-2. **Актуальность** - легко обновлять схему вместе с кодом
-3. **Понятность** - все связи и constraints видны сразу
-4. **Красота** - современный дизайн с адаптивной версткой
+1. **Clarity** — the database schema appears right in your docs
+2. **Up to date** — easy to keep the schema in sync with code
+3. **Understandable** — relationships and constraints are visible at once
+4. **Polished** — modern design with responsive layout

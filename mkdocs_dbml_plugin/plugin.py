@@ -7,7 +7,7 @@ from .renderer import DbmlRenderer
 
 class DbmlPlugin(BasePlugin):
     config_scheme = (
-        ("theme", config_options.Type(str, default="default")),
+        ("theme", config_options.Type(str, default="black")),
         ("show_indexes", config_options.Type(bool, default=True)),
         ("show_notes", config_options.Type(bool, default=True)),
     )
@@ -89,6 +89,56 @@ class DbmlPlugin(BasePlugin):
                             var exit = D.exitFullscreen || D.webkitExitFullscreen;
                             if (exit) { exit.call(D); fsBtn.setAttribute('title', 'Fullscreen'); }
                         }
+                    });
+                }
+                var exportSvgBtn = W.querySelector('.dbml-export-svg-btn');
+                if (exportSvgBtn) {
+                    exportSvgBtn.addEventListener('pointerdown', function(e) { e.stopPropagation(); });
+                    exportSvgBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        var s = new XMLSerializer().serializeToString(svg);
+                        var blob = new Blob([s], { type: 'image/svg+xml;charset=utf-8' });
+                        var url = URL.createObjectURL(blob);
+                        var a = D.createElement('a');
+                        a.href = url;
+                        a.download = 'diagram.svg';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    });
+                }
+                var exportPngBtn = W.querySelector('.dbml-export-png-btn');
+                if (exportPngBtn) {
+                    exportPngBtn.addEventListener('pointerdown', function(e) { e.stopPropagation(); });
+                    exportPngBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        var clone = svg.cloneNode(true);
+                        clone.style.transform = '';
+                        var vb = (clone.getAttribute('viewBox') || '0 0 800 600').split(/\\s+/);
+                        var vw = parseInt(vb[2], 10) || 800;
+                        var vh = parseInt(vb[3], 10) || 600;
+                        var scale = 2;
+                        clone.setAttribute('width', vw);
+                        clone.setAttribute('height', vh);
+                        var svgStr = new XMLSerializer().serializeToString(clone);
+                        var dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+                        var img = new Image();
+                        img.onload = function() {
+                            var canvas = D.createElement('canvas');
+                            canvas.width = vw * scale;
+                            canvas.height = vh * scale;
+                            var ctx = canvas.getContext('2d');
+                            ctx.fillStyle = '#fff';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            ctx.drawImage(img, 0, 0, vw * scale, vh * scale);
+                            var pngUrl = canvas.toDataURL('image/png');
+                            var a = D.createElement('a');
+                            a.href = pngUrl;
+                            a.download = 'diagram.png';
+                            a.click();
+                        };
+                        img.src = dataUrl;
                     });
                 }
 
@@ -231,7 +281,7 @@ class DbmlPlugin(BasePlugin):
                 W.addEventListener('wheel', function(e) {
                     e.preventDefault();
                     var ns = S * (e.deltaY > 0 ? 0.92 : 1.08);
-                    if (ns < 0.3) ns = 0.3; else if (ns > 3) ns = 3;
+                    if (ns < 0.1) ns = 0.1; else if (ns > 3) ns = 3;
                     var r = W.getBoundingClientRect();
                     var px = e.clientX - r.left, py = e.clientY - r.top;
                     var c = ns / S;
