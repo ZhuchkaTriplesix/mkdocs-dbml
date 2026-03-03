@@ -17,12 +17,12 @@ except ImportError:
 setup(
     name="mkdocs-dbml-plugin",
     version="0.1.0",
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="ZhuchkaTriplesix",
+    author_email="mrlololoshka94@gmail.com",
     description="MkDocs plugin to render DBML as interactive ERD diagrams",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/mkdocs-dbml-plugin",
+    url="https://github.com/ZhuchkaTriplesix/mkdocs-dbml",
     packages=find_packages(),
     ext_modules=ext_modules,
     classifiers=[
@@ -33,7 +33,7 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.9",
     install_requires=[
         "mkdocs>=1.0.0",
         "pydbml>=1.0.0",
