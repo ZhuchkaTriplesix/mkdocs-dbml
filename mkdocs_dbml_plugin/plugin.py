@@ -7,7 +7,7 @@ from .renderer import DbmlRenderer
 
 class DbmlPlugin(BasePlugin):
     config_scheme = (
-        ("theme", config_options.Type(str, default="default")),
+        ("theme", config_options.Type(str, default="black")),
         ("show_indexes", config_options.Type(bool, default=True)),
         ("show_notes", config_options.Type(bool, default=True)),
     )
@@ -231,7 +231,7 @@ class DbmlPlugin(BasePlugin):
                 W.addEventListener('wheel', function(e) {
                     e.preventDefault();
                     var ns = S * (e.deltaY > 0 ? 0.92 : 1.08);
-                    if (ns < 0.3) ns = 0.3; else if (ns > 3) ns = 3;
+                    if (ns < 0.1) ns = 0.1; else if (ns > 3) ns = 3;
                     var r = W.getBoundingClientRect();
                     var px = e.clientX - r.left, py = e.clientY - r.top;
                     var c = ns / S;
