@@ -34,6 +34,20 @@ THEMES = {
         "bg_color": "#1f2937",
         "border_color": "#374151",
     },
+    "dark_gray": {
+        "gradient_start": "#4b5563",
+        "gradient_end": "#6b7280",
+        "line_color": "#9ca3af",
+        "bg_color": "#1f2937",
+        "border_color": "#374151",
+    },
+    "black": {
+        "gradient_start": "#171717",
+        "gradient_end": "#404040",
+        "line_color": "#fafafa",
+        "bg_color": "#0a0a0a",
+        "border_color": "#262626",
+    },
 }
 
 
