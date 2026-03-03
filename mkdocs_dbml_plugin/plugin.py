@@ -1,3 +1,4 @@
+import os
 import re
 from mkdocs.plugins import BasePlugin
 from mkdocs.config import config_options
@@ -13,9 +14,36 @@ class DbmlPlugin(BasePlugin):
 
     def on_page_markdown(self, markdown, page, config, files):
         pattern = r"```dbml\n(.*?)```"
+        docs_dir = config.get("docs_dir", "docs")
 
         def replace_dbml(match):
-            dbml_code = match.group(1)
+            raw = match.group(1)
+            if not raw:
+                return '<div class="dbml-error">Empty DBML block</div>'
+            dbml_code = raw.strip()
+            lines = dbml_code.split("\n")
+            first = lines[0].strip() if lines else ""
+
+            # Include from .dbml file: "file: path/to/schema.dbml" or just "path/to/schema.dbml" (single line)
+            file_path = None
+            if first.startswith("file:") or first.startswith("include:"):
+                file_path = first.split(":", 1)[1].strip()
+            elif len(lines) == 1 and first.endswith(".dbml") and " " not in first:
+                file_path = first
+
+            if file_path:
+                # Resolve relative to docs_dir, normalize to prevent path traversal
+                resolved = os.path.normpath(os.path.join(docs_dir, file_path))
+                if not os.path.abspath(resolved).startswith(os.path.abspath(docs_dir)):
+                    return f'<div class="dbml-error">DBML file path outside docs: {file_path!r}</div>'
+                try:
+                    with open(resolved, "r", encoding="utf-8") as f:
+                        dbml_code = f.read()
+                except FileNotFoundError:
+                    return f'<div class="dbml-error">DBML file not found: {file_path!r}</div>'
+                except OSError as e:
+                    return f'<div class="dbml-error">Cannot read DBML file: {e}</div>'
+
             renderer = DbmlRenderer(
                 theme=self.config["theme"],
                 show_indexes=self.config["show_indexes"],
