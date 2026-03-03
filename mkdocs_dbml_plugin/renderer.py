@@ -193,9 +193,12 @@ class DbmlRenderer:
 
         svg.append(f'<g class="dbml-table-group" data-table="{table.name}">')
 
+        is_dark = self.theme in ("dark", "dark_gray", "black")
+        table_fill = self.colors["bg_color"] if is_dark else "white"
+        table_stroke = self.colors["border_color"] if is_dark else "#e5e7eb"
         svg.append(f'<rect x="{x}" y="{y}" width="{width}" height="{height}" ')
         svg.append(
-            'class="dbml-table-bg" fill="white" stroke="#e5e7eb" stroke-width="2" rx="8" filter="url(#shadow)"/>'
+            f'class="dbml-table-bg" fill="{table_fill}" stroke="{table_stroke}" stroke-width="2" rx="8" filter="url(#shadow)"/>'
         )
 
         gradient_id = f"gradient-{hashlib.md5(table.name.encode()).hexdigest()[:8]}"
@@ -221,7 +224,8 @@ class DbmlRenderer:
         )
 
         svg.append(f'<text x="{x + width / 2}" y="{y + 28}" ')
-        svg.append('class="dbml-table-title" text-anchor="middle" fill="white" ')
+        title_fill = "#fafafa" if is_dark and self.theme == "black" else "white"
+        svg.append(f'class="dbml-table-title" text-anchor="middle" fill="{title_fill}" ')
         svg.append(
             f'font-size="16" font-weight="600">{self._escape_html(table.name)}</text>'
         )
@@ -229,10 +233,11 @@ class DbmlRenderer:
         current_y = y + 66
         for idx, column in enumerate(table.columns):
             if idx > 0:
+                sep_color = "#374151" if is_dark else "#f3f4f6"
                 svg.append(
                     f'<line x1="{x + 8}" y1="{current_y - 18}" x2="{x + width - 8}" y2="{current_y - 18}" '
                 )
-                svg.append('stroke="#f3f4f6" stroke-width="1"/>')
+                svg.append(f'stroke="{sep_color}" stroke-width="1"/>')
             svg.append(self._render_svg_field(column, x, current_y, width, table))
             current_y += 36
 
@@ -242,8 +247,9 @@ class DbmlRenderer:
 
     def _render_svg_field(self, column, x, y, width, table) -> str:
         svg = []
-
-        name_color = "#1f2937"
+        is_dark = self.theme in ("dark", "dark_gray", "black")
+        name_color = "#e5e7eb" if is_dark else "#1f2937"
+        type_color = "#a5b4fc" if is_dark else "#7c3aed"
         is_fk = False
 
         for ref in getattr(table, "_refs", []):
@@ -276,7 +282,7 @@ class DbmlRenderer:
         text_x = x + 30
 
         if column.pk:
-            name_color = "#ef4444"
+            name_color = "#f87171" if is_dark else "#ef4444"
             svg.append(
                 f'<svg x="{icon_x}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
             )
@@ -285,7 +291,7 @@ class DbmlRenderer:
             )
             svg.append("</svg>")
         elif is_fk:
-            name_color = "#10b981"
+            name_color = "#34d399" if is_dark else "#10b981"
             svg.append(
                 f'<svg x="{icon_x}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
             )
@@ -304,7 +310,7 @@ class DbmlRenderer:
             type_text = type_text[:12] + "..."
 
         svg.append(
-            f'<text x="{x + 150}" y="{y}" font-size="11" fill="#7c3aed" font-family="monospace">'
+            f'<text x="{x + 150}" y="{y}" font-size="11" fill="{type_color}" font-family="monospace">'
         )
         svg.append(f"{self._escape_html(type_text)}</text>")
 
