@@ -1,4 +1,10 @@
 include README.md
 include LICENSE
-include requirements.txt
+include pyproject.toml
+include setup.py
 recursive-include mkdocs_dbml_plugin *.py *.pyx
+global-exclude __pycache__ *.py[cod] *.so *.pyd
+global-exclude *.c
+prune example
+prune .github
+prune tests

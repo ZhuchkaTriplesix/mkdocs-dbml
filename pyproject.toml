@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mkdocs-dbml-plugin"
+version = "1.0.0"
+description = "MkDocs plugin to render DBML as interactive ERD diagrams"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [
+    { name = "ZhuchkaTriplesix", email = "mrlololoshka94@gmail.com" }
+]
+keywords = ["mkdocs", "plugin", "dbml", "erd", "diagram", "documentation"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Topic :: Documentation",
+    "Topic :: Text Processing :: Markup",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "mkdocs>=1.0.0",
+    "numpy>=1.20.0",
+    "pydbml>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/ZhuchkaTriplesix/mkdocs-dbml"
+Documentation = "https://github.com/ZhuchkaTriplesix/mkdocs-dbml#readme"
+Repository = "https://github.com/ZhuchkaTriplesix/mkdocs-dbml"
+Issues = "https://github.com/ZhuchkaTriplesix/mkdocs-dbml/issues"
+
+[project.optional-dependencies]
+dev = [
+    "cython>=0.29",
+]
+
+[project.entry-points."mkdocs.plugins"]
+dbml = "mkdocs_dbml_plugin.plugin:DbmlPlugin"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["mkdocs_dbml_plugin*"]

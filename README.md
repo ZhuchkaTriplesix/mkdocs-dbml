@@ -226,6 +226,16 @@ mkdocs-dbml/
         └── *.md
 ```
 
+## Publishing to PyPI (maintainers)
+
+```bash
+pip install build twine
+python -m build
+twine upload dist/*
+```
+
+Use an API token from [pypi.org/manage/account](https://pypi.org/manage/account/) (env `TWINE_USERNAME=__token__`, `TWINE_PASSWORD=<token>`).
+
 ## License
 
 MIT

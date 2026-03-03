@@ -129,6 +129,34 @@ Table lesson_completions {
 }
 ```
 
+## TableGroup
+
+You can group tables visually with DBML `TableGroup`. Grouped tables get a rounded border and label:
+
+```dbml
+Table users {
+  id integer [primary key]
+  username varchar(50) [not null]
+}
+
+Table posts {
+  id integer [primary key]
+  user_id integer [ref: > users.id]
+  title varchar(200)
+}
+
+Table tags {
+  id integer [primary key]
+  name varchar(50) [not null, unique]
+}
+
+TableGroup content {
+  users
+  posts
+  tags
+}
+```
+
 ## Why visualize
 
 1. **Clarity** — see the full database structure at a glance

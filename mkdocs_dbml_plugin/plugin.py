@@ -91,6 +91,56 @@ class DbmlPlugin(BasePlugin):
                         }
                     });
                 }
+                var exportSvgBtn = W.querySelector('.dbml-export-svg-btn');
+                if (exportSvgBtn) {
+                    exportSvgBtn.addEventListener('pointerdown', function(e) { e.stopPropagation(); });
+                    exportSvgBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        var s = new XMLSerializer().serializeToString(svg);
+                        var blob = new Blob([s], { type: 'image/svg+xml;charset=utf-8' });
+                        var url = URL.createObjectURL(blob);
+                        var a = D.createElement('a');
+                        a.href = url;
+                        a.download = 'diagram.svg';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    });
+                }
+                var exportPngBtn = W.querySelector('.dbml-export-png-btn');
+                if (exportPngBtn) {
+                    exportPngBtn.addEventListener('pointerdown', function(e) { e.stopPropagation(); });
+                    exportPngBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        var clone = svg.cloneNode(true);
+                        clone.style.transform = '';
+                        var vb = (clone.getAttribute('viewBox') || '0 0 800 600').split(/\\s+/);
+                        var vw = parseInt(vb[2], 10) || 800;
+                        var vh = parseInt(vb[3], 10) || 600;
+                        var scale = 2;
+                        clone.setAttribute('width', vw);
+                        clone.setAttribute('height', vh);
+                        var svgStr = new XMLSerializer().serializeToString(clone);
+                        var dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+                        var img = new Image();
+                        img.onload = function() {
+                            var canvas = D.createElement('canvas');
+                            canvas.width = vw * scale;
+                            canvas.height = vh * scale;
+                            var ctx = canvas.getContext('2d');
+                            ctx.fillStyle = '#fff';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            ctx.drawImage(img, 0, 0, vw * scale, vh * scale);
+                            var pngUrl = canvas.toDataURL('image/png');
+                            var a = D.createElement('a');
+                            a.href = pngUrl;
+                            a.download = 'diagram.png';
+                            a.click();
+                        };
+                        img.src = dataUrl;
+                    });
+                }
 
                 var S = 1, TX = 0, TY = 0;
                 var M = 0; // 0=idle 1=table 2=canvas
