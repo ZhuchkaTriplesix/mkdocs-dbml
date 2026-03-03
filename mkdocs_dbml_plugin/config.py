@@ -42,11 +42,11 @@ THEMES = {
         "border_color": "#374151",
     },
     "black": {
-        "gradient_start": "#171717",
-        "gradient_end": "#404040",
-        "line_color": "#fafafa",
-        "bg_color": "#0a0a0a",
-        "border_color": "#262626",
+        "gradient_start": "#050505",
+        "gradient_end": "#1a1a1a",
+        "line_color": "#ffffff",
+        "bg_color": "#000000",
+        "border_color": "#141414",
     },
 }
 

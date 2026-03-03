@@ -230,7 +230,7 @@ class DbmlRenderer:
         )
 
         svg.append(f'<text x="{x + width / 2}" y="{y + 28}" ')
-        title_fill = "#fafafa" if is_dark and self.theme == "black" else "white"
+        title_fill = "#ffffff" if self.theme == "black" else ("white" if not is_dark else "#fafafa")
         svg.append(
             f'class="dbml-table-title" text-anchor="middle" fill="{title_fill}" '
         )
@@ -241,7 +241,7 @@ class DbmlRenderer:
         current_y = y + 66
         for idx, column in enumerate(table.columns):
             if idx > 0:
-                sep_color = "#374151" if is_dark else "#f3f4f6"
+                sep_color = "#1f1f1f" if self.theme == "black" else ("#374151" if is_dark else "#f3f4f6")
                 svg.append(
                     f'<line x1="{x + 8}" y1="{current_y - 18}" x2="{x + width - 8}" y2="{current_y - 18}" '
                 )
@@ -256,8 +256,8 @@ class DbmlRenderer:
     def _render_svg_field(self, column, x, y, width, table) -> str:
         svg = []
         is_dark = self.theme in ("dark", "dark_gray", "black")
-        name_color = "#e5e7eb" if is_dark else "#1f2937"
-        type_color = "#a5b4fc" if is_dark else "#7c3aed"
+        name_color = "#f5f5f5" if self.theme == "black" else ("#e5e7eb" if is_dark else "#1f2937")
+        type_color = "#c4b5fd" if self.theme == "black" else ("#a5b4fc" if is_dark else "#7c3aed")
         is_fk = False
 
         for ref in getattr(table, "_refs", []):
@@ -291,7 +291,7 @@ class DbmlRenderer:
         type_center_x = x + (150 + width - 60) / 2
 
         if column.pk:
-            name_color = "#f87171" if is_dark else "#ef4444"
+            name_color = "#fca5a5" if self.theme == "black" else ("#f87171" if is_dark else "#ef4444")
             svg.append(
                 f'<svg x="{icon_x}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
             )
@@ -300,7 +300,7 @@ class DbmlRenderer:
             )
             svg.append("</svg>")
         elif is_fk:
-            name_color = "#34d399" if is_dark else "#10b981"
+            name_color = "#6ee7b7" if self.theme == "black" else ("#34d399" if is_dark else "#10b981")
             svg.append(
                 f'<svg x="{icon_x}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
             )
