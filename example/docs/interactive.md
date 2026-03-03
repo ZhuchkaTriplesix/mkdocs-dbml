@@ -19,7 +19,7 @@ Relationships are redrawn automatically when you move tables!
 
 - **Scroll up** — zoom in
 - **Scroll down** — zoom out
-- Scale range: 30% to 300%
+- Scale range: 10% to 300%
 - Zoom is centered on the cursor (like Google Maps)
 
 You can also use the round buttons in the top-right corner.
@@ -126,7 +126,7 @@ Try:
 
 ### Zoom
 - Zoom centered on cursor position
-- Range: 0.3x – 3.0x
+- Range: 0.1x – 3.0x
 - Step: 10% per wheel tick
 - Position recalculated to keep focus
 
