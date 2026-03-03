@@ -75,6 +75,22 @@ class DbmlPlugin(BasePlugin):
             for (var wi = 0; wi < wraps.length; wi++) { (function(W) {
                 var svg = W.querySelector('.dbml-diagram');
                 if (!svg) return;
+                var fsBtn = W.querySelector('.dbml-fullscreen-btn');
+                if (fsBtn) {
+                    fsBtn.addEventListener('pointerdown', function(e) { e.stopPropagation(); });
+                    fsBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        var el = D.fullscreenElement || D.webkitFullscreenElement;
+                        if (!el) {
+                            var req = W.requestFullscreen || W.webkitRequestFullscreen;
+                            if (req) { req.call(W); fsBtn.setAttribute('title', 'Exit fullscreen (Esc)'); }
+                        } else {
+                            var exit = D.exitFullscreen || D.webkitExitFullscreen;
+                            if (exit) { exit.call(D); fsBtn.setAttribute('title', 'Fullscreen'); }
+                        }
+                    });
+                }
 
                 var S = 1, TX = 0, TY = 0;
                 var M = 0; // 0=idle 1=table 2=canvas
@@ -359,6 +375,16 @@ class DbmlPlugin(BasePlugin):
                 }
 
             })(wraps[wi]); }
+            function onFullscreenChange() {
+                var fsEl = D.fullscreenElement || D.webkitFullscreenElement;
+                var btns = D.querySelectorAll('.dbml-fullscreen-btn');
+                for (var i = 0; i < btns.length; i++) {
+                    var inFs = fsEl && fsEl.contains(btns[i]);
+                    btns[i].setAttribute('title', inFs ? 'Exit fullscreen (Esc)' : 'Fullscreen');
+                }
+            }
+            D.addEventListener('fullscreenchange', onFullscreenChange);
+            D.addEventListener('webkitfullscreenchange', onFullscreenChange);
         });
         })();
         """
