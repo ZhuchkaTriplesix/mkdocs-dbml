@@ -10,7 +10,7 @@ MkDocs plugin that renders [DBML](https://dbml.dbdiagram.io/) code blocks as int
 - **Click-to-select** — click any relationship line to highlight it and its connected fields
 - **Crow's foot notation** — classic ERD markers for one-to-one, one-to-many, many-to-many
 - **Material Design 3 icons** — PK, FK, NOT NULL, UNIQUE badges on fields
-- **5 color themes** — default, ocean, sunset, forest, dark
+- **7 color themes** — default, ocean, sunset, forest, dark, dark_gray, black
 - **High performance** — optional Cython-compiled routing engine; Numba JIT fallback
 
 ## Installation
@@ -114,6 +114,8 @@ plugins:
 | `sunset` | Pink → blue | Light backgrounds |
 | `forest` | Dark teal → green | Light backgrounds |
 | `dark` | Dark violet | Dark backgrounds |
+| `dark_gray` | Gray → slate | Dark backgrounds, neutral |
+| `black` | Near-black → gray | Dark backgrounds, high contrast |
 
 Example with the dark theme:
 
