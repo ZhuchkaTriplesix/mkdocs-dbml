@@ -34,3 +34,8 @@ env/
 *~
 .DS_Store
 site/
+
+# Cython build artifacts
+*.pyd
+*.c
+!setup.py
