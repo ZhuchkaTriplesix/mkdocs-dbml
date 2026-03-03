@@ -93,6 +93,28 @@ mkdocs build        # static output in site/
 
 The plugin converts every `` ```dbml `` code block into an interactive SVG diagram.
 
+### Including native `.dbml` files
+
+You can embed the contents of a `.dbml` file instead of pasting DBML inline. Paths are relative to your `docs_dir`.
+
+**Option 1 — single line with path (must end with `.dbml`, no spaces):**
+
+````markdown
+```dbml
+schema.dbml
+```
+````
+
+**Option 2 — explicit `file:` or `include:` prefix:**
+
+````markdown
+```dbml
+file: schemas/public.dbml
+```
+````
+
+The file is read from `docs_dir` (e.g. `docs/schema.dbml` or `docs/schemas/public.dbml`). Path traversal (`../`) outside `docs_dir` is not allowed.
+
 ## Configuration
 
 All options are set under the `dbml` plugin entry in `mkdocs.yml`:
