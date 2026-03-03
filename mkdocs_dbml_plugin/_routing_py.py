@@ -7,10 +7,7 @@ import numpy as np
 
 try:
     from numba import njit
-
-    HAS_NUMBA = True
 except ImportError:
-    HAS_NUMBA = False
 
     def njit(f=None, **kw):
         if f is None:
@@ -21,7 +18,7 @@ except ImportError:
 @njit(cache=True)
 def _seg_hits_any(x1, y1, x2, y2, rects, n, skip1, skip2):
     """Check if an axis-aligned segment (x1,y1)-(x2,y2) overlaps any rect (with 5px padding)."""
-    cdef_pad = 5.0
+    pad = 5.0
     lo_x = min(x1, x2)
     hi_x = max(x1, x2)
     lo_y = min(y1, y2)
@@ -29,10 +26,10 @@ def _seg_hits_any(x1, y1, x2, y2, rects, n, skip1, skip2):
     for i in range(n):
         if i == skip1 or i == skip2:
             continue
-        rx = rects[i, 0] - cdef_pad
-        ry = rects[i, 1] - cdef_pad
-        rr = rects[i, 0] + rects[i, 2] + cdef_pad
-        rb = rects[i, 1] + rects[i, 3] + cdef_pad
+        rx = rects[i, 0] - pad
+        ry = rects[i, 1] - pad
+        rr = rects[i, 0] + rects[i, 2] + pad
+        rb = rects[i, 1] + rects[i, 3] + pad
         if lo_x <= rr and hi_x >= rx and lo_y <= rb and hi_y >= ry:
             return i
     return -1
