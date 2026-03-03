@@ -7,7 +7,7 @@ theme:
 plugins:
   - search
   - dbml:
-      theme: dark
+      theme: black
       show_indexes: true
       show_notes: true
 
