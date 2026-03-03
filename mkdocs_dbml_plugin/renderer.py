@@ -235,7 +235,7 @@ class DbmlRenderer:
             f'class="dbml-table-title" text-anchor="middle" fill="{title_fill}" '
         )
         svg.append(
-            f'font-size="16" font-weight="600">{self._escape_html(table.name)}</text>'
+            f'font-size="16" font-weight="700">{self._escape_html(table.name)}</text>'
         )
 
         current_y = y + 66
@@ -287,7 +287,8 @@ class DbmlRenderer:
         svg.append(f"<title>{self._escape_html(tooltip)}</title>")
 
         icon_x = x + 10
-        text_x = x + 30
+        name_center_x = x + (30 + 148) / 2
+        type_center_x = x + (150 + width - 60) / 2
 
         if column.pk:
             name_color = "#f87171" if is_dark else "#ef4444"
@@ -309,7 +310,7 @@ class DbmlRenderer:
             svg.append("</svg>")
 
         svg.append(
-            f'<text x="{text_x}" y="{y}" font-size="13" fill="{name_color}" font-weight="500" font-family="monospace">'
+            f'<text x="{name_center_x}" y="{y}" text-anchor="middle" font-size="13" fill="{name_color}" font-weight="600" font-family="monospace">'
         )
         svg.append(f"{self._escape_html(column.name)}</text>")
 
@@ -318,7 +319,7 @@ class DbmlRenderer:
             type_text = type_text[:12] + "..."
 
         svg.append(
-            f'<text x="{x + 150}" y="{y}" font-size="11" fill="{type_color}" font-family="monospace">'
+            f'<text x="{type_center_x}" y="{y}" text-anchor="middle" font-size="11" fill="{type_color}" font-weight="600" font-family="monospace">'
         )
         svg.append(f"{self._escape_html(type_text)}</text>")
 
@@ -552,12 +553,17 @@ class DbmlRenderer:
             cursor: help;
         }
         
-        .dbml-field-row:hover text {
+        .dbml-field-row text {
             font-weight: 600;
+        }
+        
+        .dbml-field-row:hover text {
+            font-weight: 700;
         }
         
         .dbml-table-title {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 700;
             user-select: none;
         }
         
