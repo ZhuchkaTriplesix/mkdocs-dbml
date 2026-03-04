@@ -91,10 +91,32 @@ class DbmlPlugin(BasePlugin):
                         }
                     });
                 }
+                function inlineAllStyles(orig, copy, skipDefs) {
+                    var tag = orig.tagName ? orig.tagName.toLowerCase() : '';
+                    if (tag === 'defs') return;
+                    if (orig.getBoundingClientRect && orig.getBoundingClientRect().width === 0
+                        && tag !== 'svg' && tag !== 'g') return;
+                    try {
+                        var cs = getComputedStyle(orig);
+                        var props = ['opacity','fill','stroke','stroke-width','font-size','font-weight',
+                            'font-family','visibility','display','color'];
+                        for (var p = 0; p < props.length; p++) {
+                            var v = cs.getPropertyValue(props[p]);
+                            if (v) copy.setAttribute(props[p], v);
+                        }
+                    } catch(e) {}
+                    var oc = orig.children, cc = copy.children;
+                    for (var c = 0; c < oc.length; c++) {
+                        if (oc[c].nodeType === 1 && cc[c]) inlineAllStyles(oc[c], cc[c]);
+                    }
+                }
+
                 function prepareExportClone() {
                     var clone = svg.cloneNode(true);
-                    clone.style.transform = '';
-                    clone.style.pointerEvents = '';
+                    inlineAllStyles(svg, clone);
+
+                    clone.removeAttribute('class');
+                    clone.removeAttribute('style');
 
                     var pad = 40;
                     var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -122,25 +144,20 @@ class DbmlPlugin(BasePlugin):
                     bgRect.setAttribute('y', minY);
                     bgRect.setAttribute('width', vw);
                     bgRect.setAttribute('height', vh);
-                    var wrapStyle = getComputedStyle(W);
-                    bgRect.setAttribute('fill', wrapStyle.backgroundColor || '#000');
+                    var wrapBg = svg.getAttribute('data-bg') || '#000';
+                    bgRect.setAttribute('fill', wrapBg);
                     clone.insertBefore(bgRect, clone.firstChild);
 
-                    var lines = clone.querySelectorAll('.dbml-relationship-line');
-                    for (var i = 0; i < lines.length; i++) {
-                        lines[i].style.opacity = '0.7';
-                        lines[i].style.pointerEvents = 'stroke';
+                    var allHits = clone.querySelectorAll('[class*="relationship-hit"]');
+                    for (var i = allHits.length - 1; i >= 0; i--) {
+                        allHits[i].parentNode.removeChild(allHits[i]);
                     }
-                    var hits = clone.querySelectorAll('.dbml-relationship-hit');
-                    for (var i = 0; i < hits.length; i++) {
-                        hits[i].parentNode.removeChild(hits[i]);
-                    }
-                    var rlayer = clone.querySelector('.dbml-relationships-layer');
-                    if (rlayer) rlayer.style.pointerEvents = 'auto';
 
-                    var grps = clone.querySelectorAll('.dbml-table-group');
+                    var grps = clone.querySelectorAll('[data-table]');
                     for (var i = 0; i < TN; i++) {
-                        if (grps[i]) grps[i].style.transform = TA[i].e.style.transform;
+                        if (grps[i] && TA[i].e.style.transform) {
+                            grps[i].setAttribute('transform', 'translate(' + TA[i].dx + ',' + TA[i].dy + ')');
+                        }
                     }
 
                     return { clone: clone, vw: vw, vh: vh };
@@ -179,7 +196,7 @@ class DbmlPlugin(BasePlugin):
                             canvas.width = r.vw * scale;
                             canvas.height = r.vh * scale;
                             var ctx = canvas.getContext('2d');
-                            ctx.fillStyle = '#000';
+                            ctx.fillStyle = svg.getAttribute('data-bg') || '#000';
                             ctx.fillRect(0, 0, canvas.width, canvas.height);
                             ctx.drawImage(img, 0, 0, r.vw * scale, r.vh * scale);
                             var pngUrl = canvas.toDataURL('image/png');
