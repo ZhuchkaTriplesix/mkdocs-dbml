@@ -4,14 +4,16 @@ MkDocs plugin that renders [DBML](https://dbml.dbdiagram.io/) code blocks as int
 
 ## Features
 
-- **Interactive SVG diagrams** — drag tables, zoom with mouse wheel, pan the canvas
+- **Interactive SVG diagrams** — drag tables, zoom with mouse wheel (10%–300%), pan the canvas
 - **Field-to-field connections** — relationship lines go from the exact FK field to the exact PK field
 - **Orthogonal routing** — lines use right-angle paths and automatically avoid overlapping tables
+- **Export** — download the diagram as SVG or PNG (theme background preserved)
+- **TableGroup** — group tables visually with DBML `TableGroup { table1 table2 }`
 - **Click-to-select** — click any relationship line to highlight it and its connected fields
 - **Crow's foot notation** — classic ERD markers for one-to-one, one-to-many, many-to-many
 - **Material Design 3 icons** — PK, FK, NOT NULL, UNIQUE badges on fields
-- **7 color themes** — default, ocean, sunset, forest, dark, dark_gray, black
-- **High performance** — optional Cython-compiled routing engine; Numba JIT fallback
+- **7 color themes** — default, ocean, sunset, forest, dark, dark_gray, black (default theme: black)
+- **High performance** — optional Cython-compiled routing engine; pure-Python fallback
 
 ## Installation
 
@@ -42,6 +44,7 @@ Installed automatically by `pip install`:
 | Package | Purpose |
 |---------|---------|
 | `mkdocs >= 1.0` | Documentation framework |
+| `numpy >= 1.20` | Layout/routing (required) |
 | `pydbml >= 1.0` | DBML parser |
 
 ## Quick start
@@ -122,9 +125,9 @@ All options are set under the `dbml` plugin entry in `mkdocs.yml`:
 ```yaml
 plugins:
   - dbml:
-      theme: default      # color theme (see below)
-      show_indexes: true   # display index information
-      show_notes: true     # display table notes
+      theme: black        # default; or default, ocean, sunset, forest, dark, dark_gray
+      show_indexes: true  # display index information
+      show_notes: true    # display table notes
 ```
 
 ### Themes
@@ -174,6 +177,19 @@ Table table_name {
 | `ref: - table.col` | One-to-one | Bar → Bar |
 | `ref: <> table.col` | Many-to-many | Crow's foot → Crow's foot |
 
+### TableGroup
+
+Group tables visually with a rounded border and label:
+
+```dbml
+Table users { id integer [pk] }
+Table posts { id integer [pk], user_id integer [ref: > users.id] }
+TableGroup content {
+  users
+  posts
+}
+```
+
 ### Indexes and notes
 
 ```dbml
@@ -201,6 +217,7 @@ Full DBML specification: [dbml.dbdiagram.io/docs](https://dbml.dbdiagram.io/docs
 | **Pan the canvas** | Click and drag empty space |
 | **Zoom** | Mouse wheel (10% – 300%) |
 | **Fullscreen** | Click the expand button (top-right), Esc to exit |
+| **Export** | SVG or PNG button (top-right); uses theme background |
 | **Highlight connections** | Hover over a table |
 | **Select a line** | Click on any relationship line |
 | **Field tooltip** | Hover over a field row |

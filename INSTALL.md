@@ -64,10 +64,12 @@ Available options:
 ```yaml
 plugins:
   - dbml:
-      theme: default   # default, ocean, sunset, forest, dark, dark_gray, black
+      theme: black    # default; or default, ocean, sunset, forest, dark, dark_gray
       show_indexes: true
       show_notes: true
 ```
+
+Diagrams include **Export** buttons (top-right): download as SVG or PNG. The exported image uses the theme background and includes all relationship lines.
 
 ## Publishing the package
 

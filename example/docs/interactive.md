@@ -24,6 +24,15 @@ Relationships are redrawn automatically when you move tables!
 
 You can also use the round buttons in the top-right corner.
 
+## 📥 Export (SVG / PNG)
+
+Use the **Export** buttons (top-right, next to fullscreen):
+
+- **SVG** — downloads the diagram as a vector image (theme background included).
+- **PNG** — downloads a raster image at 2× resolution.
+
+The exported image includes all relationship lines and markers. The view is auto-fitted so every table is visible (no cropping).
+
 ## ✨ Relationship highlighting
 
 When you hover a table:
