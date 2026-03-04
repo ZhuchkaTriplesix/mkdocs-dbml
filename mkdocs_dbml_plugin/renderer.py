@@ -101,8 +101,9 @@ class DbmlRenderer:
             + 50
         )
 
+        bg_color = self.colors["bg_color"]
         svg_parts = [
-            f'<svg class="dbml-diagram" viewBox="0 0 {max_x} {max_y}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">'
+            f'<svg class="dbml-diagram" viewBox="0 0 {max_x} {max_y}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible" data-bg="{bg_color}">'
         ]
 
         line_color = self.colors["line_color"]
@@ -110,58 +111,58 @@ class DbmlRenderer:
         svg_parts.append("<defs>")
 
         svg_parts.append(
-            '<marker id="arrow-one-start" viewBox="0 0 10 10" markerWidth="10" markerHeight="10"'
-            ' refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse">'
+            '<marker id="arrow-one-start" viewBox="0 0 10 14" markerWidth="10" markerHeight="14"'
+            ' refX="0" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
         )
         svg_parts.append(
-            f'<line x1="0" y1="1" x2="0" y2="9" stroke="{line_color}" stroke-width="2"/>'
-        )
-        svg_parts.append("</marker>")
-
-        svg_parts.append(
-            '<marker id="arrow-one-end" viewBox="0 0 10 10" markerWidth="10" markerHeight="10"'
-            ' refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse">'
-        )
-        svg_parts.append(
-            f'<line x1="10" y1="1" x2="10" y2="9" stroke="{line_color}" stroke-width="2"/>'
+            f'<line x1="0" y1="1" x2="0" y2="13" stroke="{line_color}" stroke-width="2.5"/>'
         )
         svg_parts.append("</marker>")
 
         svg_parts.append(
-            '<marker id="arrow-many-start" viewBox="0 0 12 10" markerWidth="12" markerHeight="10"'
-            ' refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse">'
+            '<marker id="arrow-one-end" viewBox="0 0 10 14" markerWidth="10" markerHeight="14"'
+            ' refX="10" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
         )
         svg_parts.append(
-            f'<path d="M 0,2 L 6,5 L 0,8" stroke="{line_color}" stroke-width="1.5" fill="none"/>'
-            f'<path d="M 4,0 L 12,5 L 4,10" stroke="{line_color}" stroke-width="1.5" fill="none"/>'
-        )
-        svg_parts.append("</marker>")
-
-        svg_parts.append(
-            '<marker id="arrow-many-end" viewBox="0 0 12 10" markerWidth="12" markerHeight="10"'
-            ' refX="12" refY="5" orient="auto" markerUnits="userSpaceOnUse">'
-        )
-        svg_parts.append(
-            f'<path d="M 12,2 L 6,5 L 12,8" stroke="{line_color}" stroke-width="1.5" fill="none"/>'
-            f'<path d="M 8,0 L 0,5 L 8,10" stroke="{line_color}" stroke-width="1.5" fill="none"/>'
+            f'<line x1="10" y1="1" x2="10" y2="13" stroke="{line_color}" stroke-width="2.5"/>'
         )
         svg_parts.append("</marker>")
 
         svg_parts.append(
-            '<marker id="arrow-optional-start" viewBox="0 0 10 10" markerWidth="10" markerHeight="10"'
-            ' refX="0" refY="5" orient="auto" markerUnits="userSpaceOnUse">'
+            '<marker id="arrow-many-start" viewBox="0 0 16 14" markerWidth="16" markerHeight="14"'
+            ' refX="0" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
         )
         svg_parts.append(
-            f'<circle cx="5" cy="5" r="4" fill="none" stroke="{line_color}" stroke-width="1.5"/>'
+            f'<path d="M 0,2 L 8,7 L 0,12" stroke="{line_color}" stroke-width="2" fill="none"/>'
+            f'<path d="M 5,0 L 15,7 L 5,14" stroke="{line_color}" stroke-width="2" fill="none"/>'
         )
         svg_parts.append("</marker>")
 
         svg_parts.append(
-            '<marker id="arrow-optional-end" viewBox="0 0 10 10" markerWidth="10" markerHeight="10"'
-            ' refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse">'
+            '<marker id="arrow-many-end" viewBox="0 0 16 14" markerWidth="16" markerHeight="14"'
+            ' refX="16" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
         )
         svg_parts.append(
-            f'<circle cx="5" cy="5" r="4" fill="none" stroke="{line_color}" stroke-width="1.5"/>'
+            f'<path d="M 16,2 L 8,7 L 16,12" stroke="{line_color}" stroke-width="2" fill="none"/>'
+            f'<path d="M 11,0 L 1,7 L 11,14" stroke="{line_color}" stroke-width="2" fill="none"/>'
+        )
+        svg_parts.append("</marker>")
+
+        svg_parts.append(
+            '<marker id="arrow-optional-start" viewBox="0 0 14 14" markerWidth="14" markerHeight="14"'
+            ' refX="0" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
+        )
+        svg_parts.append(
+            f'<circle cx="7" cy="7" r="5" fill="none" stroke="{line_color}" stroke-width="2"/>'
+        )
+        svg_parts.append("</marker>")
+
+        svg_parts.append(
+            '<marker id="arrow-optional-end" viewBox="0 0 14 14" markerWidth="14" markerHeight="14"'
+            ' refX="14" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
+        )
+        svg_parts.append(
+            f'<circle cx="7" cy="7" r="5" fill="none" stroke="{line_color}" stroke-width="2"/>'
         )
         svg_parts.append("</marker>")
 
