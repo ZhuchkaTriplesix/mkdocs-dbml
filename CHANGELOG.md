@@ -28,4 +28,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - N/A
 
+## [1.0.1] - 2026-02-27
+
+### Added
+
+- TableGroup support (visual grouping with rounded border and label)
+- Export diagram as SVG or PNG (buttons in diagram controls)
+- Export uses theme background color (`data-bg`)
+
+### Fixed
+
+- Export SVG/PNG: relationship lines now visible (inline styles, remove hit paths)
+- Export: viewBox recalculated from table positions so nothing is cut off
+- Export: markers (arrows, circles) no longer overwritten; larger stroke for visibility
+- Export: dark theme background in downloaded SVG/PNG
+
 [1.0.0]: https://github.com/ZhuchkaTriplesix/mkdocs-dbml/releases/tag/v1.0.0
+[1.0.1]: https://github.com/ZhuchkaTriplesix/mkdocs-dbml/releases/tag/v1.0.1
