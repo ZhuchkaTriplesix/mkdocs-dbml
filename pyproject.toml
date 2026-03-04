@@ -50,6 +50,9 @@ dbml = "mkdocs_dbml_plugin.plugin:DbmlPlugin"
 where = ["."]
 include = ["mkdocs_dbml_plugin*"]
 
+[tool.setuptools.package-data]
+mkdocs_dbml_plugin = ["assets/*.js"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["ignore:.*deprecated.*:DeprecationWarning"]
