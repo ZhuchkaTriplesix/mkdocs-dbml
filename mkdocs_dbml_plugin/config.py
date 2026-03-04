@@ -1,3 +1,11 @@
+HEADER_HEIGHT = 48
+ROW_HEIGHT = 36
+TABLE_BOTTOM_PADDING = 12
+FIELD_Y_START = 66
+TABLE_GROUP_PADDING = 24
+SVG_PADDING = 50
+CONN_GAP = 20.0
+
 THEMES = {
     "default": {
         "gradient_start": "#667eea",
