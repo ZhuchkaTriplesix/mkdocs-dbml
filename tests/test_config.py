@@ -1,7 +1,14 @@
 """Tests for theme config."""
 
 import pytest
-from mkdocs_dbml_plugin.config import get_theme_colors, THEMES
+from mkdocs_dbml_plugin.config import (
+    get_theme_colors,
+    THEMES,
+    HEADER_HEIGHT,
+    ROW_HEIGHT,
+    TABLE_BOTTOM_PADDING,
+    FIELD_Y_START,
+)
 
 
 def test_get_theme_colors_returns_dict():
@@ -29,3 +36,9 @@ def test_black_theme_is_dark():
 def test_unknown_theme_falls_back_to_default():
     colors = get_theme_colors("nonexistent")
     assert colors == THEMES["default"]
+
+
+def test_layout_constants_are_consistent():
+    assert FIELD_Y_START == HEADER_HEIGHT + ROW_HEIGHT // 2
+    assert TABLE_BOTTOM_PADDING > 0
+    assert ROW_HEIGHT > 0

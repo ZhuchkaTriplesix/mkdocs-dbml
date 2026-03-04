@@ -48,3 +48,39 @@ file: ../../../etc/passwd.dbml
     result = plugin.on_page_markdown(md, None, config, None)
     assert "dbml-error" in result
     assert "outside" in result or "not found" in result.lower()
+
+
+def test_plugin_on_config_warns_invalid_theme(plugin, caplog):
+    plugin.config["theme"] = "nonexistent_theme"
+    import logging
+    with caplog.at_level(logging.WARNING, logger="mkdocs.plugins.dbml"):
+        plugin.on_config({})
+    assert "unknown theme" in caplog.text
+
+
+def test_plugin_on_post_page_skips_non_dbml_page(plugin):
+    plugin.on_config({})
+    output = "<html><head></head><body><p>Hello</p></body></html>"
+    result = plugin.on_post_page(output, None, {})
+    assert result == output
+
+
+def test_plugin_on_post_page_injects_on_dbml_page(plugin):
+    plugin.on_config({})
+    output = "<html><head></head><body><!-- dbml-styles --><p>diagram</p></body></html>"
+    result = plugin.on_post_page(output, None, {})
+    assert "<style>" in result
+    assert "<script>" in result
+    assert "<!-- dbml-styles -->" not in result
+
+
+def test_plugin_error_messages_are_escaped(plugin):
+    md = """# Page
+
+```dbml
+file: <script>alert(1)</script>.dbml
+```
+"""
+    config = {"docs_dir": tempfile.mkdtemp()}
+    result = plugin.on_page_markdown(md, None, config, None)
+    assert "<script>alert" not in result

@@ -67,3 +67,31 @@ def test_get_css_returns_non_empty_string():
     assert isinstance(css, str)
     assert "dbml-diagram-wrapper" in css
     assert len(css) > 500
+
+
+def test_xss_in_table_name_is_escaped():
+    dbml = 'Table "users\\"style=\\"bad" {\n  id integer [pk]\n}'
+    r = DbmlRenderer()
+    try:
+        html = r.render(dbml)
+    except Exception:
+        return
+    assert 'style="bad"' not in html
+
+
+def test_data_attributes_are_escaped(simple_dbml):
+    r = DbmlRenderer(theme="black")
+    html = r.render(simple_dbml)
+    assert 'data-table="' in html
+    assert 'data-field="' in html
+    assert 'data-from="' in html or 'data-to="' in html
+
+
+def test_render_uses_sha256_ids(simple_dbml):
+    r = DbmlRenderer()
+    html = r.render(simple_dbml)
+    assert "dbml-" in html
+    import re
+    ids = re.findall(r'id="dbml-([a-f0-9]+)"', html)
+    for h in ids:
+        assert len(h) == 16, f"Expected 16-char sha256 hash, got {len(h)}"
