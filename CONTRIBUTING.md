@@ -17,7 +17,8 @@ Edit code in `mkdocs_dbml_plugin/`. The `example/` site uses the local plugin.
 
 ## Testing
 
-- Run the example: `cd example && mkdocs serve` and check docs in the browser.
+- **Unit tests:** `pip install -e ".[dev]"` then `pytest tests/ -v`
+- **Example site:** `cd example && mkdocs serve` and check docs in the browser.
 - Optionally install Cython and build: `pip install cython && python setup.py build_ext --inplace`.
 
 ## Pull requests

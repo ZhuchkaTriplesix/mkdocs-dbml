@@ -40,6 +40,7 @@ Issues = "https://github.com/ZhuchkaTriplesix/mkdocs-dbml/issues"
 [project.optional-dependencies]
 dev = [
     "cython>=0.29",
+    "pytest>=7.0",
 ]
 
 [project.entry-points."mkdocs.plugins"]
@@ -48,3 +49,7 @@ dbml = "mkdocs_dbml_plugin.plugin:DbmlPlugin"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["mkdocs_dbml_plugin*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore:.*deprecated.*:DeprecationWarning"]
