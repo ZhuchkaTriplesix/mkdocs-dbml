@@ -91,13 +91,86 @@ class DbmlPlugin(BasePlugin):
                         }
                     });
                 }
+                function inlineAllStyles(orig, copy, skipDefs) {
+                    var tag = orig.tagName ? orig.tagName.toLowerCase() : '';
+                    if (tag === 'defs') return;
+                    if (orig.getBoundingClientRect && orig.getBoundingClientRect().width === 0
+                        && tag !== 'svg' && tag !== 'g') return;
+                    try {
+                        var cs = getComputedStyle(orig);
+                        var props = ['opacity','fill','stroke','stroke-width','font-size','font-weight',
+                            'font-family','visibility','display','color'];
+                        for (var p = 0; p < props.length; p++) {
+                            var v = cs.getPropertyValue(props[p]);
+                            if (v) copy.setAttribute(props[p], v);
+                        }
+                    } catch(e) {}
+                    var oc = orig.children, cc = copy.children;
+                    for (var c = 0; c < oc.length; c++) {
+                        if (oc[c].nodeType === 1 && cc[c]) inlineAllStyles(oc[c], cc[c]);
+                    }
+                }
+
+                function prepareExportClone() {
+                    var clone = svg.cloneNode(true);
+                    inlineAllStyles(svg, clone);
+
+                    clone.removeAttribute('class');
+                    clone.removeAttribute('style');
+
+                    var pad = 40;
+                    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                    for (var i = 0; i < TN; i++) {
+                        var t = TA[i];
+                        var lx = t.ox + t.dx, ly = t.oy + t.dy;
+                        if (lx < minX) minX = lx;
+                        if (ly < minY) minY = ly;
+                        if (lx + t.ow > maxX) maxX = lx + t.ow;
+                        if (ly + t.oh > maxY) maxY = ly + t.oh;
+                    }
+                    if (minX === Infinity) {
+                        var vb = (svg.getAttribute('viewBox') || '0 0 800 600').split(/\\s+/);
+                        minX = 0; minY = 0; maxX = +vb[2] || 800; maxY = +vb[3] || 600;
+                    }
+                    minX -= pad; minY -= pad; maxX += pad; maxY += pad;
+                    var vw = Math.ceil(maxX - minX);
+                    var vh = Math.ceil(maxY - minY);
+                    clone.setAttribute('viewBox', minX + ' ' + minY + ' ' + vw + ' ' + vh);
+                    clone.setAttribute('width', vw);
+                    clone.setAttribute('height', vh);
+
+                    var bgRect = D.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    bgRect.setAttribute('x', minX);
+                    bgRect.setAttribute('y', minY);
+                    bgRect.setAttribute('width', vw);
+                    bgRect.setAttribute('height', vh);
+                    var wrapBg = svg.getAttribute('data-bg') || '#000';
+                    bgRect.setAttribute('fill', wrapBg);
+                    clone.insertBefore(bgRect, clone.firstChild);
+
+                    var allHits = clone.querySelectorAll('[class*="relationship-hit"]');
+                    for (var i = allHits.length - 1; i >= 0; i--) {
+                        allHits[i].parentNode.removeChild(allHits[i]);
+                    }
+
+                    var grps = clone.querySelectorAll('[data-table]');
+                    for (var i = 0; i < TN; i++) {
+                        if (grps[i] && TA[i].e.style.transform) {
+                            grps[i].setAttribute('transform', 'translate(' + TA[i].dx + ',' + TA[i].dy + ')');
+                        }
+                    }
+
+                    return { clone: clone, vw: vw, vh: vh };
+                }
+
                 var exportSvgBtn = W.querySelector('.dbml-export-svg-btn');
                 if (exportSvgBtn) {
                     exportSvgBtn.addEventListener('pointerdown', function(e) { e.stopPropagation(); });
                     exportSvgBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
                         e.preventDefault();
-                        var s = new XMLSerializer().serializeToString(svg);
+                        var r = prepareExportClone();
+                        var s = new XMLSerializer().serializeToString(r.clone);
                         var blob = new Blob([s], { type: 'image/svg+xml;charset=utf-8' });
                         var url = URL.createObjectURL(blob);
                         var a = D.createElement('a');
@@ -113,25 +186,19 @@ class DbmlPlugin(BasePlugin):
                     exportPngBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
                         e.preventDefault();
-                        var clone = svg.cloneNode(true);
-                        clone.style.transform = '';
-                        var vb = (clone.getAttribute('viewBox') || '0 0 800 600').split(/\\s+/);
-                        var vw = parseInt(vb[2], 10) || 800;
-                        var vh = parseInt(vb[3], 10) || 600;
+                        var r = prepareExportClone();
                         var scale = 2;
-                        clone.setAttribute('width', vw);
-                        clone.setAttribute('height', vh);
-                        var svgStr = new XMLSerializer().serializeToString(clone);
+                        var svgStr = new XMLSerializer().serializeToString(r.clone);
                         var dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
                         var img = new Image();
                         img.onload = function() {
                             var canvas = D.createElement('canvas');
-                            canvas.width = vw * scale;
-                            canvas.height = vh * scale;
+                            canvas.width = r.vw * scale;
+                            canvas.height = r.vh * scale;
                             var ctx = canvas.getContext('2d');
-                            ctx.fillStyle = '#fff';
+                            ctx.fillStyle = svg.getAttribute('data-bg') || '#000';
                             ctx.fillRect(0, 0, canvas.width, canvas.height);
-                            ctx.drawImage(img, 0, 0, vw * scale, vh * scale);
+                            ctx.drawImage(img, 0, 0, r.vw * scale, r.vh * scale);
                             var pngUrl = canvas.toDataURL('image/png');
                             var a = D.createElement('a');
                             a.href = pngUrl;
