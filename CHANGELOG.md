@@ -28,6 +28,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - N/A
 
+## [1.0.6] - 2026-02-27
+
+### Security
+
+- Escape DBML table/column names in SVG `data-*` attributes to prevent XSS
+- Escape error messages and file paths in plugin HTML output
+
+### Changed
+
+- Diagram/gradient/clip IDs use SHA256 (16 chars) instead of MD5 (8 chars)
+- Layout and renderer use named constants (HEADER_HEIGHT, ROW_HEIGHT, etc.) from config
+- Theme validation: warn in `on_config` when theme is unknown, list available themes
+- Interactive JS moved to `mkdocs_dbml_plugin/assets/dbml.js` (load once, no inline string)
+- Export clone matches table groups by `data-table` attribute instead of DOM index
+- Narrow exception handling: catch ValueError/KeyError for parse errors; log full traceback for unexpected errors
+- Remove `<!-- dbml-styles -->` marker from final HTML after injecting CSS/JS
+
+### Added
+
+- Tests for XSS escaping, SHA256 IDs, theme warning, post_page injection, error escaping
+
 ## [1.0.5] - 2026-02-27
 
 ### Added
