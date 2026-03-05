@@ -1,7 +1,14 @@
 from pydbml import PyDBML
 import hashlib
 from .layout import GraphLayoutEngine
-from .config import get_theme_colors
+from .config import (
+    get_theme_colors,
+    FIELD_Y_START,
+    ROW_HEIGHT,
+    TABLE_GROUP_PADDING,
+    SVG_PADDING,
+    CONN_GAP,
+)
 from .routing import route_connection, build_table_rects
 
 
@@ -29,16 +36,16 @@ class DbmlRenderer:
         for table in parsed.tables:
             self.field_positions[table.name] = {}
             x, y = self.table_positions[table.name]
-            current_y = y + 66
+            current_y = y + FIELD_Y_START
             for column in table.columns:
                 self.field_positions[table.name][column.name] = (x, current_y)
-                current_y += 36
+                current_y += ROW_HEIGHT
 
         self._table_names, self._table_idx, self._table_rects = build_table_rects(
             self.table_positions, self.table_dimensions
         )
 
-        diagram_id = hashlib.md5(dbml_code.encode()).hexdigest()[:8]
+        diagram_id = hashlib.sha256(dbml_code.encode()).hexdigest()[:16]
 
         html_parts = [
             "<!-- dbml-styles -->",
@@ -91,14 +98,14 @@ class DbmlRenderer:
                 pos[0] + self.table_dimensions[name][0]
                 for name, pos in self.table_positions.items()
             )
-            + 50
+            + SVG_PADDING
         )
         max_y = (
             max(
                 pos[1] + self.table_dimensions[name][1]
                 for name, pos in self.table_positions.items()
             )
-            + 50
+            + SVG_PADDING
         )
 
         bg_color = self.colors["bg_color"]
@@ -217,7 +224,7 @@ class DbmlRenderer:
         ]
         if not box_tables:
             return ""
-        pad = 24
+        pad = TABLE_GROUP_PADDING
         min_x = min(p[0][0] for p in box_tables) - pad
         min_y = min(p[0][1] for p in box_tables) - pad
         max_x = max(p[0][0] + p[1][0] for p in box_tables) + pad
@@ -249,7 +256,7 @@ class DbmlRenderer:
 
         svg = []
 
-        svg.append(f'<g class="dbml-table-group" data-table="{table.name}">')
+        svg.append(f'<g class="dbml-table-group" data-table="{self._escape_html(table.name)}">')
 
         is_dark = self.theme in ("dark", "dark_gray", "black")
         table_fill = self.colors["bg_color"] if is_dark else "white"
@@ -259,7 +266,7 @@ class DbmlRenderer:
             f'class="dbml-table-bg" fill="{table_fill}" stroke="{table_stroke}" stroke-width="2" rx="8" filter="url(#shadow)"/>'
         )
 
-        gradient_id = f"gradient-{hashlib.md5(table.name.encode()).hexdigest()[:8]}"
+        gradient_id = f"gradient-{hashlib.sha256(table.name.encode()).hexdigest()[:16]}"
         svg.append(
             f'<defs><linearGradient id="{gradient_id}" x1="0%" y1="0%" x2="100%" y2="0%">'
         )
@@ -271,7 +278,7 @@ class DbmlRenderer:
         )
         svg.append("</linearGradient></defs>")
 
-        clip_id = f"clip-{hashlib.md5(table.name.encode()).hexdigest()[:8]}"
+        clip_id = f"clip-{hashlib.sha256(table.name.encode()).hexdigest()[:16]}"
         svg.append(
             f'<defs><clipPath id="{clip_id}"><rect x="{x}" y="{y}" width="{width}" height="44" rx="8"/></clipPath></defs>'
         )
@@ -290,16 +297,16 @@ class DbmlRenderer:
             f'font-size="16" font-weight="700">{self._escape_html(table.name)}</text>'
         )
 
-        current_y = y + 66
+        current_y = y + FIELD_Y_START
         for idx, column in enumerate(table.columns):
             if idx > 0:
                 sep_color = "#1f1f1f" if self.theme == "black" else ("#374151" if is_dark else "#f3f4f6")
                 svg.append(
-                    f'<line x1="{x + 8}" y1="{current_y - 18}" x2="{x + width - 8}" y2="{current_y - 18}" '
+                    f'<line x1="{x + 8}" y1="{current_y - ROW_HEIGHT // 2}" x2="{x + width - 8}" y2="{current_y - ROW_HEIGHT // 2}" '
                 )
                 svg.append(f'stroke="{sep_color}" stroke-width="1"/>')
             svg.append(self._render_svg_field(column, x, current_y, width, table))
-            current_y += 36
+            current_y += ROW_HEIGHT
 
         svg.append("</g>")
 
@@ -331,7 +338,7 @@ class DbmlRenderer:
         tooltip = " | ".join(tooltip_parts)
 
         svg.append(
-            f'<g class="dbml-field-row" data-field="{table.name}.{column.name}">'
+            f'<g class="dbml-field-row" data-field="{self._escape_html(table.name)}.{self._escape_html(column.name)}">'
         )
         svg.append(
             f'<rect x="{x + 1}" y="{y - 16}" width="{width - 2}" height="34" fill="transparent" rx="4"/>'
@@ -440,7 +447,7 @@ class DbmlRenderer:
             from_idx,
             to_idx,
             self._table_rects,
-            gap=20.0,
+            gap=CONN_GAP,
         )
 
         parts = [f"M {waypoints[0][0]} {waypoints[0][1]}"]
@@ -467,7 +474,9 @@ class DbmlRenderer:
 
         svg = []
         svg.append(
-            f'<g class="dbml-relationship-group" data-from="{table1_name}.{field1_name}" data-to="{table2_name}.{field2_name}">'
+            f'<g class="dbml-relationship-group" '
+            f'data-from="{self._escape_html(table1_name)}.{self._escape_html(field1_name)}" '
+            f'data-to="{self._escape_html(table2_name)}.{self._escape_html(field2_name)}">'
         )
         svg.append(
             f'<path d="{path}" stroke="transparent" stroke-width="12" fill="none" class="dbml-relationship-hit"/>'
@@ -487,6 +496,7 @@ class DbmlRenderer:
             .replace("<", "&lt;")
             .replace(">", "&gt;")
             .replace('"', "&quot;")
+            .replace("'", "&#x27;")
         )
 
     @staticmethod

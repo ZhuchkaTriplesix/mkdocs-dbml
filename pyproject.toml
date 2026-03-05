@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mkdocs-dbml-plugin"
-version = "1.0.5"
+version = "1.0.6"
 description = "MkDocs plugin to render DBML as interactive ERD diagrams"
 readme = "README.md"
 license = "MIT"
@@ -40,6 +40,7 @@ Issues = "https://github.com/ZhuchkaTriplesix/mkdocs-dbml/issues"
 [project.optional-dependencies]
 dev = [
     "cython>=0.29",
+    "pytest>=7.0",
 ]
 
 [project.entry-points."mkdocs.plugins"]
@@ -48,3 +49,10 @@ dbml = "mkdocs_dbml_plugin.plugin:DbmlPlugin"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["mkdocs_dbml_plugin*"]
+
+[tool.setuptools.package-data]
+mkdocs_dbml_plugin = ["assets/*.js"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore:.*deprecated.*:DeprecationWarning"]

@@ -3,11 +3,12 @@
 Welcome! This plugin lets you embed **visual ERD diagrams** of your database directly into your MkDocs documentation.
 
 Diagrams are rendered in a Mermaid/dbdiagram.io style with:
-- Tables as cards with gradient headers
+- Tables as cards with gradient headers (default theme: black)
 - **Field-to-field relationships** — lines run from the exact FK field to the exact PK field
+- **Export** — download as SVG or PNG (theme background preserved)
+- **TableGroup** — group tables with a rounded border (see [Advanced](advanced.md#tablegroup))
 - **Material Design 3 icons** — modern SVG icons
-- **Drag & Drop** — drag tables with the mouse
-- **Mouse wheel zoom** — scale the diagram
+- **Drag & Drop** — drag tables; **mouse wheel zoom** (10%–300%)
 - Interactive hover effects and relationship highlighting
 
 ## Simple example
@@ -55,17 +56,17 @@ Table comments {
 
 - ✅ **Visual ERD diagrams** with SVG graphics
 - ✅ **Field-to-field relationships** — lines run from FK to PK
+- ✅ **Export** — download diagram as SVG or PNG
+- ✅ **TableGroup** — group tables visually (DBML `TableGroup`)
 - ✅ **Material Design 3 icons** — modern SVG icons
 - ✅ **Drag & drop tables** — move them with the mouse
-- ✅ **Mouse wheel zoom** — smooth scaling
+- ✅ **Mouse wheel zoom** — smooth scaling (10%–300%)
 - ✅ Automatic DBML parsing
 - ✅ Graph-based layout algorithm
-- ✅ Gradient headers (multiple color themes)
+- ✅ Gradient headers (7 color themes; default: black)
 - ✅ Interactivity: hover effects, relationship highlighting
 - ✅ Tooltips with full field information
-- ✅ Legend with Material Design icons
 - ✅ Responsive design for all devices
-- ✅ Dark theme support with auto-detection
 
 ## How it works
 

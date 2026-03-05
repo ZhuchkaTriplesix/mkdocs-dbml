@@ -1,5 +1,7 @@
 from typing import Dict, Set
 
+from .config import HEADER_HEIGHT, ROW_HEIGHT, TABLE_BOTTOM_PADDING
+
 
 class GraphLayoutEngine:
     def __init__(self, tables, refs):
@@ -66,7 +68,7 @@ class GraphLayoutEngine:
                 y = padding + layer_idx * (300 + v_spacing)
 
                 field_count = len(table.columns)
-                height = 48 + (field_count * 36) + 12
+                height = HEADER_HEIGHT + (field_count * ROW_HEIGHT) + TABLE_BOTTOM_PADDING
 
                 positions[table_name] = (x, y)
                 dimensions[table_name] = (col_width, height)

@@ -1,8 +1,12 @@
 # Color themes
 
-The plugin supports several color themes for diagrams. Pick one that fits your documentation!
+The plugin supports several color themes for diagrams. The **default theme is black** (high contrast, OLED-friendly). Override it in `mkdocs.yml` if you prefer another theme.
 
-## Default
+## Black (default)
+
+Near-black background, white/gray lines and text. Best for dark docs and OLED screens.
+
+## Default (purple)
 
 Classic purple theme with a gradient from indigo to purple.
 
@@ -27,7 +31,7 @@ In `mkdocs.yml`:
 ```yaml
 plugins:
   - dbml:
-      theme: ocean  # choose: default, ocean, sunset, forest, dark, dark_gray, black
+      theme: black  # default; or default, ocean, sunset, forest, dark, dark_gray
 ```
 
 ## Available themes
@@ -70,10 +74,11 @@ plugins:
 
 ## Choosing a theme
 
-- **Default** — universal, works for any docs
+- **Black** — default; dark, high contrast, OLED-friendly
+- **Default** — purple gradient; universal for light docs
 - **Ocean** — technical projects, API docs
 - **Sunset** — creative projects, startups
 - **Forest** — corporate documentation
-- **Dark** — dark-mode sites
+- **Dark / Dark gray** — alternative dark themes
 
 All themes are responsive and look good on any screen.
