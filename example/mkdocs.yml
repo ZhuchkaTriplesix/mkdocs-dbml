@@ -15,5 +15,6 @@ nav:
   - Home: index.md
   - Interactivity: interactive.md
   - Examples: examples.md
+  - Table groups: groups.md
   - Advanced: advanced.md
   - Themes: themes.md

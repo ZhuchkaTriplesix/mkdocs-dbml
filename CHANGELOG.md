@@ -28,6 +28,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - N/A
 
+## [1.0.7] - 2026-02-27
+
+### Added
+
+- Table groups: drag individual tables (group rect auto-resizes); drag group background to move all tables together
+- Example page `groups.md` with identity/catalog/sales groups
+
+### Fixed
+
+- Group background not receiving pointer events (pointer-events: fill on .dbml-tablegroup-bg)
+
 ## [1.0.6] - 2026-02-27
 
 ### Security

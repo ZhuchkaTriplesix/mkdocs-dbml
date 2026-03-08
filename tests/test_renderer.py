@@ -60,6 +60,8 @@ TableGroup g1 {
     r = DbmlRenderer(theme="black")
     html = r.render(dbml)
     assert "dbml-tablegroups-layer" in html or "dbml-tablegroup" in html
+    assert 'data-tables="' in html
+    assert 'data-group="' in html
 
 
 def test_get_css_returns_non_empty_string():
