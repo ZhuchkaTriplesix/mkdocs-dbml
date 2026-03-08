@@ -99,6 +99,36 @@ D.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
+            var cloneVTG = clone.querySelectorAll('.dbml-tablegroup');
+            for (var i = 0; i < cloneVTG.length; i++) {
+                var g = cloneVTG[i];
+                var tblist = (g.getAttribute('data-tables') || '').split(',').map(function(s){ return s.trim(); });
+                var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                for (var j = 0; j < tblist.length; j++) {
+                    var td = TD[tblist[j]];
+                    if (!td) continue;
+                    var lx = td.ox + td.dx, ly = td.oy + td.dy;
+                    if (lx < minX) minX = lx;
+                    if (ly < minY) minY = ly;
+                    if (lx + td.ow > maxX) maxX = lx + td.ow;
+                    if (ly + td.oh > maxY) maxY = ly + td.oh;
+                }
+                if (minX === Infinity) continue;
+                minX -= 24; minY -= 24; maxX += 24; maxY += 24;
+                var rect = g.querySelector('.dbml-tablegroup-bg');
+                var text = g.querySelector('text');
+                if (rect) {
+                    rect.setAttribute('x', minX);
+                    rect.setAttribute('y', minY);
+                    rect.setAttribute('width', maxX - minX);
+                    rect.setAttribute('height', maxY - minY);
+                }
+                if (text) {
+                    text.setAttribute('x', minX + 14);
+                    text.setAttribute('y', minY + 18);
+                }
+            }
+
             return { clone: clone, vw: vw, vh: vh };
         }
 
@@ -151,6 +181,7 @@ D.addEventListener('DOMContentLoaded', function() {
         var S = 1, TX = 0, TY = 0;
         var M = 0;
         var DR = null;
+        var DR_GROUP = null;
         var MX0 = 0, MY0 = 0, IX = 0, IY = 0, CX0 = 0, CY0 = 0;
 
         svg.style.transformOrigin = '0 0';
@@ -173,12 +204,54 @@ D.addEventListener('DOMContentLoaded', function() {
                 oy: +bg.getAttribute('y'),
                 ow: +bg.getAttribute('width'),
                 oh: +bg.getAttribute('height'),
-                dx: 0, dy: 0
+                dx: 0, dy: 0,
+                group: g.getAttribute('data-group') || null
             };
             TD[nm] = d;
             TA[i] = d;
             g.style.cursor = 'move';
             g.style.willChange = 'transform';
+        }
+
+        var vtg = svg.querySelectorAll('.dbml-tablegroup');
+        var VTG = [];
+        var VTG_PAD = 24;
+        for (var i = 0; i < vtg.length; i++) {
+            var g = vtg[i];
+            var tblist = (g.getAttribute('data-tables') || '').split(',').map(function(s){ return s.trim(); });
+            var members = [];
+            for (var j = 0; j < tblist.length; j++) {
+                if (TD[tblist[j]]) members.push(TD[tblist[j]]);
+            }
+            VTG.push({ g: g, rect: g.querySelector('.dbml-tablegroup-bg'), text: g.querySelector('text'), members: members });
+        }
+
+        function updateTableGroups() {
+            for (var i = 0; i < VTG.length; i++) {
+                var v = VTG[i];
+                if (v.members.length === 0) continue;
+                var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                for (var j = 0; j < v.members.length; j++) {
+                    var t = v.members[j];
+                    var lx = t.ox + t.dx, ly = t.oy + t.dy;
+                    if (lx < minX) minX = lx;
+                    if (ly < minY) minY = ly;
+                    if (lx + t.ow > maxX) maxX = lx + t.ow;
+                    if (ly + t.oh > maxY) maxY = ly + t.oh;
+                }
+                minX -= VTG_PAD; minY -= VTG_PAD; maxX += VTG_PAD; maxY += VTG_PAD;
+                var gw = maxX - minX, gh = maxY - minY;
+                if (v.rect) {
+                    v.rect.setAttribute('x', minX);
+                    v.rect.setAttribute('y', minY);
+                    v.rect.setAttribute('width', gw);
+                    v.rect.setAttribute('height', gh);
+                }
+                if (v.text) {
+                    v.text.setAttribute('x', minX + 14);
+                    v.text.setAttribute('y', minY + 18);
+                }
+            }
         }
 
         var rg = svg.querySelectorAll('.dbml-relationship-group');
@@ -239,6 +312,20 @@ D.addEventListener('DOMContentLoaded', function() {
                 M = 1; DR = td;
                 IX = td.dx; IY = td.dy;
                 MX0 = e.clientX; MY0 = e.clientY;
+                DR_GROUP = null;
+                if (td.group) {
+                    for (var k = 0; k < VTG.length; k++) {
+                        if (VTG[k].g.getAttribute('data-group-name') === td.group) {
+                            DR_GROUP = VTG[k].members;
+                            break;
+                        }
+                    }
+                }
+                var dragTargets = DR_GROUP || [td];
+                for (var k = 0; k < dragTargets.length; k++) {
+                    dragTargets[k]._startDx = dragTargets[k].dx;
+                    dragTargets[k]._startDy = dragTargets[k].dy;
+                }
                 W.setPointerCapture(e.pointerId);
             });
             td.e.addEventListener('pointerenter', function() {
@@ -262,10 +349,17 @@ D.addEventListener('DOMContentLoaded', function() {
         W.addEventListener('pointermove', function(e) {
             if (M === 1) {
                 var invS = 1 / S;
-                DR.dx = IX + (e.clientX - MX0) * invS;
-                DR.dy = IY + (e.clientY - MY0) * invS;
-                DR.e.style.transform = 'translate(' + DR.dx + 'px,' + DR.dy + 'px)';
+                var deltaX = (e.clientX - MX0) * invS;
+                var deltaY = (e.clientY - MY0) * invS;
+                var dragTargets = DR_GROUP || [DR];
+                for (var k = 0; k < dragTargets.length; k++) {
+                    var t = dragTargets[k];
+                    t.dx = t._startDx + deltaX;
+                    t.dy = t._startDy + deltaY;
+                    t.e.style.transform = 'translate(' + t.dx + 'px,' + t.dy + 'px)';
+                }
                 uc();
+                updateTableGroups();
             } else if (M === 2) {
                 TX = CX0 + e.clientX - MX0;
                 TY = CY0 + e.clientY - MY0;
@@ -276,7 +370,7 @@ D.addEventListener('DOMContentLoaded', function() {
         W.addEventListener('pointerup', function(e) {
             W.releasePointerCapture(e.pointerId);
             if (M === 2) W.style.cursor = 'grab';
-            M = 0; DR = null;
+            M = 0; DR = null; DR_GROUP = null;
         });
 
         W.addEventListener('wheel', function(e) {

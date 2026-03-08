@@ -189,6 +189,7 @@ class DbmlRenderer:
         svg_parts.append("</defs>")
 
         table_groups = getattr(parsed, "table_groups", None) or []
+        self._parsed_table_groups = table_groups
         if table_groups:
             svg_parts.append('<g class="dbml-tablegroups-layer">')
             for tg in table_groups:
@@ -235,12 +236,14 @@ class DbmlRenderer:
         fill = "rgba(99, 102, 241, 0.06)" if not is_dark else "rgba(255, 255, 255, 0.04)"
         stroke = "#c7d2fe" if not is_dark else "rgba(255, 255, 255, 0.15)"
         label = self._escape_html(tg.name)
+        tables_attr = ",".join(self._escape_html(n) for n in names)
         svg = []
         svg.append(
-            f'<g class="dbml-tablegroup" data-group-name="{self._escape_html(tg.name)}">'
+            f'<g class="dbml-tablegroup" data-group-name="{self._escape_html(tg.name)}" '
+            f'data-tables="{tables_attr}">'
         )
         svg.append(
-            f'<rect x="{gx}" y="{gy}" width="{gw}" height="{gh}" rx="12" ry="12" '
+            f'<rect class="dbml-tablegroup-bg" x="{gx}" y="{gy}" width="{gw}" height="{gh}" rx="12" ry="12" '
             f'fill="{fill}" stroke="{stroke}" stroke-width="1.5"/>'
         )
         svg.append(
@@ -256,7 +259,18 @@ class DbmlRenderer:
 
         svg = []
 
-        svg.append(f'<g class="dbml-table-group" data-table="{self._escape_html(table.name)}">')
+        group_attr = ""
+        for tg in getattr(self, "_parsed_table_groups", None) or []:
+            names_in_tg = [
+                item.name if hasattr(item, "name") else item
+                for item in tg.items
+            ]
+            if table.name in names_in_tg:
+                group_attr = f' data-group="{self._escape_html(tg.name)}"'
+                break
+        svg.append(
+            f'<g class="dbml-table-group" data-table="{self._escape_html(table.name)}"{group_attr}>'
+        )
 
         is_dark = self.theme in ("dark", "dark_gray", "black")
         table_fill = self.colors["bg_color"] if is_dark else "white"
