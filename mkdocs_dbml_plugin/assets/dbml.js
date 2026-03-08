@@ -179,9 +179,9 @@ D.addEventListener('DOMContentLoaded', function() {
         }
 
         var S = 1, TX = 0, TY = 0;
-        var M = 0;
+        var M = 0; // 0=idle 1=table-drag 2=canvas-pan 3=group-drag
         var DR = null;
-        var DR_GROUP = null;
+        var GR = null;
         var MX0 = 0, MY0 = 0, IX = 0, IY = 0, CX0 = 0, CY0 = 0;
 
         svg.style.transformOrigin = '0 0';
@@ -254,6 +254,22 @@ D.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        for (var i = 0; i < VTG.length; i++) { (function(v) {
+            if (!v.rect) return;
+            v.rect.addEventListener('pointerdown', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                M = 3; GR = v.members;
+                MX0 = e.clientX; MY0 = e.clientY;
+                for (var k = 0; k < GR.length; k++) {
+                    GR[k]._startDx = GR[k].dx;
+                    GR[k]._startDy = GR[k].dy;
+                }
+                W.setPointerCapture(e.pointerId);
+                v.rect.style.cursor = 'grabbing';
+            });
+        })(VTG[i]); }
+
         var rg = svg.querySelectorAll('.dbml-relationship-group');
         var CN = rg.length;
         var C_path = new Array(CN);
@@ -312,20 +328,6 @@ D.addEventListener('DOMContentLoaded', function() {
                 M = 1; DR = td;
                 IX = td.dx; IY = td.dy;
                 MX0 = e.clientX; MY0 = e.clientY;
-                DR_GROUP = null;
-                if (td.group) {
-                    for (var k = 0; k < VTG.length; k++) {
-                        if (VTG[k].g.getAttribute('data-group-name') === td.group) {
-                            DR_GROUP = VTG[k].members;
-                            break;
-                        }
-                    }
-                }
-                var dragTargets = DR_GROUP || [td];
-                for (var k = 0; k < dragTargets.length; k++) {
-                    dragTargets[k]._startDx = dragTargets[k].dx;
-                    dragTargets[k]._startDy = dragTargets[k].dy;
-                }
                 W.setPointerCapture(e.pointerId);
             });
             td.e.addEventListener('pointerenter', function() {
@@ -349,13 +351,19 @@ D.addEventListener('DOMContentLoaded', function() {
         W.addEventListener('pointermove', function(e) {
             if (M === 1) {
                 var invS = 1 / S;
-                var deltaX = (e.clientX - MX0) * invS;
-                var deltaY = (e.clientY - MY0) * invS;
-                var dragTargets = DR_GROUP || [DR];
-                for (var k = 0; k < dragTargets.length; k++) {
-                    var t = dragTargets[k];
-                    t.dx = t._startDx + deltaX;
-                    t.dy = t._startDy + deltaY;
+                DR.dx = IX + (e.clientX - MX0) * invS;
+                DR.dy = IY + (e.clientY - MY0) * invS;
+                DR.e.style.transform = 'translate(' + DR.dx + 'px,' + DR.dy + 'px)';
+                uc();
+                updateTableGroups();
+            } else if (M === 3) {
+                var invS = 1 / S;
+                var dX = (e.clientX - MX0) * invS;
+                var dY = (e.clientY - MY0) * invS;
+                for (var k = 0; k < GR.length; k++) {
+                    var t = GR[k];
+                    t.dx = t._startDx + dX;
+                    t.dy = t._startDy + dY;
                     t.e.style.transform = 'translate(' + t.dx + 'px,' + t.dy + 'px)';
                 }
                 uc();
@@ -370,7 +378,12 @@ D.addEventListener('DOMContentLoaded', function() {
         W.addEventListener('pointerup', function(e) {
             W.releasePointerCapture(e.pointerId);
             if (M === 2) W.style.cursor = 'grab';
-            M = 0; DR = null; DR_GROUP = null;
+            if (M === 3) {
+                for (var k = 0; k < VTG.length; k++) {
+                    if (VTG[k].rect) VTG[k].rect.style.cursor = 'grab';
+                }
+            }
+            M = 0; DR = null; GR = null;
         });
 
         W.addEventListener('wheel', function(e) {

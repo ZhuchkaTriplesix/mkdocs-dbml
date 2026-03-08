@@ -638,7 +638,16 @@ class DbmlRenderer:
             pointer-events: none;
         }
         
-        .dbml-tablegroups-layer {
+        .dbml-tablegroup-bg {
+            pointer-events: fill;
+            cursor: grab;
+        }
+        
+        .dbml-tablegroup-bg:active {
+            cursor: grabbing;
+        }
+        
+        .dbml-tablegroup text {
             pointer-events: none;
         }
         
