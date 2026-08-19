@@ -387,7 +387,7 @@ class DbmlRenderer:
         )
         svg.append(f"{self._escape_html(column.name)}</text>")
 
-        type_text = column.type
+        type_text = str(column.type)
         if len(type_text) > 15:
             type_text = type_text[:12] + "..."
 
