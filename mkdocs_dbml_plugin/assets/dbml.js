@@ -183,6 +183,7 @@ D.addEventListener('DOMContentLoaded', function() {
         var DR = null;
         var GR = null;
         var MX0 = 0, MY0 = 0, IX = 0, IY = 0, CX0 = 0, CY0 = 0;
+        var _rafPending = false; // RAF throttle flag for uc() + updateTableGroups()
 
         svg.style.transformOrigin = '0 0';
         svg.style.willChange = 'transform';
@@ -353,9 +354,17 @@ D.addEventListener('DOMContentLoaded', function() {
                 var invS = 1 / S;
                 DR.dx = IX + (e.clientX - MX0) * invS;
                 DR.dy = IY + (e.clientY - MY0) * invS;
+                // Apply transform immediately for responsive feel
                 DR.e.style.transform = 'translate(' + DR.dx + 'px,' + DR.dy + 'px)';
-                uc();
-                updateTableGroups();
+                // Throttle expensive uc() + updateTableGroups() to once per frame
+                if (!_rafPending) {
+                    _rafPending = true;
+                    requestAnimationFrame(function() {
+                        uc();
+                        if (DR && DR.group) updateTableGroups();
+                        _rafPending = false;
+                    });
+                }
             } else if (M === 3) {
                 var invS = 1 / S;
                 var dX = (e.clientX - MX0) * invS;
@@ -366,8 +375,15 @@ D.addEventListener('DOMContentLoaded', function() {
                     t.dy = t._startDy + dY;
                     t.e.style.transform = 'translate(' + t.dx + 'px,' + t.dy + 'px)';
                 }
-                uc();
-                updateTableGroups();
+                // Throttle expensive uc() + updateTableGroups() to once per frame
+                if (!_rafPending) {
+                    _rafPending = true;
+                    requestAnimationFrame(function() {
+                        uc();
+                        updateTableGroups();
+                        _rafPending = false;
+                    });
+                }
             } else if (M === 2) {
                 TX = CX0 + e.clientX - MX0;
                 TY = CY0 + e.clientY - MY0;
