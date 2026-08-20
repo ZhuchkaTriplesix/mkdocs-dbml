@@ -228,6 +228,7 @@ D.addEventListener('DOMContentLoaded', function() {
         }
 
         function updateTableGroups() {
+            if (VTG.length === 0) return;
             for (var i = 0; i < VTG.length; i++) {
                 var v = VTG[i];
                 if (v.members.length === 0) continue;
