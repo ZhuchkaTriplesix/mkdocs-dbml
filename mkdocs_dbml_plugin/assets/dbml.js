@@ -227,6 +227,13 @@ D.addEventListener('DOMContentLoaded', function() {
             VTG.push({ g: g, rect: g.querySelector('.dbml-tablegroup-bg'), text: g.querySelector('text'), members: members });
         }
 
+        var FE = Object.create(null);
+        var allFields = svg.querySelectorAll('[data-field]');
+        for (var i = 0; i < allFields.length; i++) {
+            var fAttr = allFields[i].getAttribute('data-field');
+            if (fAttr) FE[fAttr] = allFields[i];
+        }
+
         function updateTableGroups() {
             if (VTG.length === 0) return;
             for (var i = 0; i < VTG.length; i++) {
@@ -518,8 +525,8 @@ D.addEventListener('DOMContentLoaded', function() {
                 if (i !== idx) HL_line[i].style.opacity = '0.1';
             }
 
-            var fromField = svg.querySelector('[data-field="' + cssSelectorEscape(fn) + '"]');
-            var toField = svg.querySelector('[data-field="' + cssSelectorEscape(tn) + '"]');
+            var fromField = FE[fn];
+            var toField = FE[tn];
             if (fromField) fromField.classList.add('selected');
             if (toField) toField.classList.add('selected');
         }
