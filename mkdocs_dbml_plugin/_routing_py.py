@@ -212,7 +212,7 @@ def route_connection(
     tx, ty, tw, th = to_rect
 
     n = len(table_rects)
-    rects = np.array(table_rects, dtype=np.float64)
+    rects = table_rects if isinstance(table_rects, np.ndarray) else np.array(table_rects, dtype=np.float64)
 
     buf, n_pts, sf, st = _find_best(
         fx,

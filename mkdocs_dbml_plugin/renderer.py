@@ -1,5 +1,9 @@
 from pydbml import PyDBML
 import hashlib
+try:
+    import numpy as np
+except ImportError:
+    np = None
 from .layout import GraphLayoutEngine
 from .config import (
     get_theme_colors,
@@ -44,6 +48,10 @@ class DbmlRenderer:
         self._table_names, self._table_idx, self._table_rects = build_table_rects(
             self.table_positions, self.table_dimensions
         )
+        if np is not None and self._table_rects:
+            self._table_rects_np = np.array(self._table_rects, dtype=np.float64)
+        else:
+            self._table_rects_np = self._table_rects
 
         diagram_id = hashlib.sha256(dbml_code.encode()).hexdigest()[:16]
 
@@ -463,7 +471,7 @@ class DbmlRenderer:
             y2_field,
             from_idx,
             to_idx,
-            self._table_rects,
+            getattr(self, "_table_rects_np", self._table_rects),
             gap=CONN_GAP,
         )
 
