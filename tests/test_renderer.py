@@ -97,3 +97,23 @@ def test_render_uses_sha256_ids(simple_dbml):
     ids = re.findall(r'id="dbml-([a-f0-9]+)"', html)
     for h in ids:
         assert len(h) == 16, f"Expected 16-char sha256 hash, got {len(h)}"
+
+
+def test_pure_python_routing_fallback():
+    from mkdocs_dbml_plugin import _routing_py
+    from_rect = (10.0, 10.0, 100.0, 100.0)
+    to_rect = (200.0, 10.0, 100.0, 100.0)
+    table_rects = [from_rect, to_rect]
+
+    wp, sf, st = _routing_py._route_one_py(
+        110.0, 30.0, 190.0, 30.0, 0, 1, table_rects, len(table_rects), 20.0
+    ), "right", "left"
+    assert len(wp) >= 2
+
+    wp, sf, st = _routing_py._route_connection_py(
+        from_rect, to_rect, 30.0, 30.0, 0, 1, table_rects, 20.0
+    )
+    assert len(wp) >= 2
+    assert sf in ("left", "right")
+    assert st in ("left", "right")
+
