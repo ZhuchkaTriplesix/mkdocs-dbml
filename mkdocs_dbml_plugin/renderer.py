@@ -190,6 +190,12 @@ class DbmlRenderer:
 
         table_groups = getattr(parsed, "table_groups", None) or []
         self._parsed_table_groups = table_groups
+        self._table_to_group = {}
+        for tg in table_groups:
+            for item in tg.items:
+                name = item.name if hasattr(item, "name") else item
+                self._table_to_group[name] = tg.name
+
         if table_groups:
             svg_parts.append('<g class="dbml-tablegroups-layer">')
             for tg in table_groups:
@@ -259,15 +265,8 @@ class DbmlRenderer:
 
         svg = []
 
-        group_attr = ""
-        for tg in getattr(self, "_parsed_table_groups", None) or []:
-            names_in_tg = [
-                item.name if hasattr(item, "name") else item
-                for item in tg.items
-            ]
-            if table.name in names_in_tg:
-                group_attr = f' data-group="{self._escape_html(tg.name)}"'
-                break
+        group_name = getattr(self, "_table_to_group", {}).get(table.name)
+        group_attr = f' data-group="{self._escape_html(group_name)}"' if group_name else ""
         svg.append(
             f'<g class="dbml-table-group" data-table="{self._escape_html(table.name)}"{group_attr}>'
         )
