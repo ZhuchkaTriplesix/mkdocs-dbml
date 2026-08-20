@@ -51,7 +51,7 @@ where = ["."]
 include = ["mkdocs_dbml_plugin*"]
 
 [tool.setuptools.package-data]
-mkdocs_dbml_plugin = ["assets/*.js"]
+mkdocs_dbml_plugin = ["assets/*.js", "assets/*.css"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
