@@ -196,6 +196,16 @@ class DbmlRenderer:
                 name = item.name if hasattr(item, "name") else item
                 self._table_to_group[name] = tg.name
 
+        self._fk_fields = {}
+        for table in parsed.tables:
+            fk_set = set()
+            for ref in getattr(table, "_refs", []):
+                if hasattr(ref, "col1") and ref.col1:
+                    for col in ref.col1:
+                        fk_set.add(col.name)
+            if fk_set:
+                self._fk_fields[table.name] = fk_set
+
         if table_groups:
             svg_parts.append('<g class="dbml-tablegroups-layer">')
             for tg in table_groups:
@@ -331,14 +341,7 @@ class DbmlRenderer:
         is_dark = self.theme in ("dark", "dark_gray", "black")
         name_color = "#f5f5f5" if self.theme == "black" else ("#e5e7eb" if is_dark else "#1f2937")
         type_color = "#c4b5fd" if self.theme == "black" else ("#a5b4fc" if is_dark else "#7c3aed")
-        is_fk = False
-
-        for ref in getattr(table, "_refs", []):
-            if hasattr(ref, "col1") and ref.col1:
-                for col in ref.col1:
-                    if col.name == column.name:
-                        is_fk = True
-                        break
+        is_fk = column.name in getattr(self, "_fk_fields", {}).get(table.name, ())
 
         tooltip_parts = [f"{column.name}: {column.type}"]
         if column.pk:
