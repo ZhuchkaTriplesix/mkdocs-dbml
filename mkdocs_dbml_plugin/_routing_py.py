@@ -239,7 +239,7 @@ def route_connection(
 
 
 def build_table_rects(positions, dimensions):
-    names = sorted(positions.keys())
+    names = list(positions.keys())
     idx_map = {}
     rects = []
     for i, name in enumerate(names):
