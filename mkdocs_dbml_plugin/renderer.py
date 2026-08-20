@@ -280,7 +280,8 @@ class DbmlRenderer:
             f'class="dbml-table-bg" fill="{table_fill}" stroke="{table_stroke}" stroke-width="2" rx="8" filter="url(#shadow)"/>'
         )
 
-        gradient_id = f"gradient-{hashlib.sha256(table.name.encode()).hexdigest()[:16]}"
+        table_hash = hashlib.sha256(table.name.encode()).hexdigest()[:16]
+        gradient_id = f"gradient-{table_hash}"
         svg.append(
             f'<defs><linearGradient id="{gradient_id}" x1="0%" y1="0%" x2="100%" y2="0%">'
         )
@@ -292,7 +293,7 @@ class DbmlRenderer:
         )
         svg.append("</linearGradient></defs>")
 
-        clip_id = f"clip-{hashlib.sha256(table.name.encode()).hexdigest()[:16]}"
+        clip_id = f"clip-{table_hash}"
         svg.append(
             f'<defs><clipPath id="{clip_id}"><rect x="{x}" y="{y}" width="{width}" height="44" rx="8"/></clipPath></defs>'
         )
