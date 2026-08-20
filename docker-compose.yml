@@ -1,0 +1,11 @@
+services:
+  mkdocs:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: mkdocs-dbml
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    command: ["mkdocs", "serve", "-f", "example/mkdocs.yml", "--dev-addr=0.0.0.0:8000"]
