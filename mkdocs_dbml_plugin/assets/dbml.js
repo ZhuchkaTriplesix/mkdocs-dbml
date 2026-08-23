@@ -315,6 +315,8 @@ D.addEventListener('DOMContentLoaded', function() {
         var C_tt = new Array(CN);
         var C_sy = new Float64Array(CN);
         var C_ey = new Float64Array(CN);
+        var C_last_j = new Int32Array(CN);
+        for (var idx = 0; idx < CN; idx++) C_last_j[idx] = -1;
 
         var C_hit = new Array(CN);
         for (var i = 0; i < CN; i++) {
@@ -504,6 +506,10 @@ D.addEventListener('DOMContentLoaded', function() {
                 var tL = t.ox + t.dx, tR = tL + t.ow;
                 var sy = C_sy[i] + f.dy, ey = C_ey[i] + t.dy;
 
+                var fT = f.oy + f.dy, fB = fT + f.oh;
+                var tT = t.oy + t.dy, tB = tT + t.oh;
+                var vertClear = (fB + 15 <= tT) || (tB + 15 <= fT);
+
                 // 4 combinations:
                 // j=0: R -> L (fR -> tL)
                 // j=1: R -> R (fR -> tR)
@@ -514,12 +520,14 @@ D.addEventListener('DOMContentLoaded', function() {
                 _sxA[2] = fL; _exA[2] = tL;
                 _sxA[3] = fL; _exA[3] = tR;
 
-                var bc = 1e18, bs = 0, be = 0, bm = 0;
+                var bc = 1e18, bs = 0, be = 0, bm = 0, b_is_step = false, b_my = 0, best_j = 0;
 
                 for (var j = 0; j < 4; j++) {
                     var sx = _sxA[j], ex = _exA[j];
                     var mx = 0;
                     var co = 0;
+                    var is_step = false;
+                    var my = 0;
 
                     if (j === 1) { // R -> R
                         mx = (sx > ex ? sx : ex) + 48;
@@ -528,40 +536,78 @@ D.addEventListener('DOMContentLoaded', function() {
                         mx = (sx < ex ? sx : ex) - 48;
                         co = (sx - mx) + (ex - mx) + (sy > ey ? sy - ey : ey - sy);
                     } else if (j === 0) { // R -> L
-                        mx = (sx + ex) * 0.5;
-                        co = (sx > ex ? sx - ex + 50000 : ex - sx) + (sy > ey ? sy - ey : ey - sy);
+                        if (sx >= ex && vertClear) {
+                            is_step = true;
+                            my = fB <= tT ? (fB + tT) * 0.5 : (tB + fT) * 0.5;
+                            co = 48 + Math.abs(sy - my) + Math.abs((sx + 24) - (ex - 24)) + Math.abs(my - ey);
+                        } else {
+                            mx = (sx + ex) * 0.5;
+                            co = (sx > ex ? sx - ex + 50000 : ex - sx) + (sy > ey ? sy - ey : ey - sy);
+                        }
                     } else { // L -> R
-                        mx = (sx + ex) * 0.5;
-                        co = (sx < ex ? ex - sx + 50000 : sx - ex) + (sy > ey ? sy - ey : ey - sy);
-                    }
-
-                    var s1L = sx < mx ? sx : mx, s1R = sx > mx ? sx : mx;
-                    var s3L = mx < ex ? mx : ex, s3R = mx > ex ? mx : ex;
-                    var vT = sy < ey ? sy : ey, vB = sy > ey ? sy : ey;
-
-                    for (var k = 0; k < TN; k++) {
-                        if (k === fi || k === ti) continue;
-                        var b = TA[k];
-                        var bL = b.ox + b.dx - 5, bR = bL + b.ow + 10;
-                        var bT = b.oy + b.dy - 5, bB = bT + b.oh + 10;
-
-                        if (sy >= bT && sy <= bB && s1R >= bL && s1L <= bR) {
-                            co += 100000; break;
-                        }
-                        if (mx >= bL && mx <= bR && vB >= bT && vT <= bB) {
-                            co += 100000; break;
-                        }
-                        if (ey >= bT && ey <= bB && s3R >= bL && s3L <= bR) {
-                            co += 100000; break;
+                        if (sx <= ex && vertClear) {
+                            is_step = true;
+                            my = fB <= tT ? (fB + tT) * 0.5 : (tB + fT) * 0.5;
+                            co = 48 + Math.abs(sy - my) + Math.abs((sx - 24) - (ex + 24)) + Math.abs(my - ey);
+                        } else {
+                            mx = (sx + ex) * 0.5;
+                            co = (sx < ex ? ex - sx + 50000 : sx - ex) + (sy > ey ? sy - ey : ey - sy);
                         }
                     }
-                    if (co < bc) { bc = co; bs = sx; be = ex; bm = mx; }
+
+                    // Hysteresis: give bonus to keep currently active side
+                    if (C_last_j[i] === j) {
+                        co -= 35;
+                    }
+
+                    // Check collisions with other tables
+                    if (!is_step) {
+                        var s1L = sx < mx ? sx : mx, s1R = sx > mx ? sx : mx;
+                        var s3L = mx < ex ? mx : ex, s3R = mx > ex ? mx : ex;
+                        var vT = sy < ey ? sy : ey, vB = sy > ey ? sy : ey;
+
+                        for (var k = 0; k < TN; k++) {
+                            if (k === fi || k === ti) continue;
+                            var b = TA[k];
+                            var bL = b.ox + b.dx - 5, bR = bL + b.ow + 10;
+                            var bT = b.oy + b.dy - 5, bB = bT + b.oh + 10;
+
+                            if (sy >= bT && sy <= bB && s1R >= bL && s1L <= bR) {
+                                co += 100000; break;
+                            }
+                            if (mx >= bL && mx <= bR && vB >= bT && vT <= bB) {
+                                co += 100000; break;
+                            }
+                            if (ey >= bT && ey <= bB && s3R >= bL && s3L <= bR) {
+                                co += 100000; break;
+                            }
+                        }
+                    }
+
+                    if (co < bc) {
+                        bc = co; bs = sx; be = ex; bm = mx;
+                        b_is_step = is_step; b_my = my; best_j = j;
+                    }
                 }
 
-                var nd = 'M ' + bs + ' ' + sy +
-                    ' L ' + bm + ' ' + sy +
-                    ' L ' + bm + ' ' + ey +
-                    ' L ' + be + ' ' + ey;
+                C_last_j[i] = best_j;
+
+                var nd = '';
+                if (b_is_step) {
+                    var s_out = best_j === 0 ? bs + 24 : bs - 24;
+                    var s_in = best_j === 0 ? be - 24 : be + 24;
+                    nd = 'M ' + bs + ' ' + sy +
+                        ' L ' + s_out + ' ' + sy +
+                        ' L ' + s_out + ' ' + b_my +
+                        ' L ' + s_in + ' ' + b_my +
+                        ' L ' + s_in + ' ' + ey +
+                        ' L ' + be + ' ' + ey;
+                } else {
+                    nd = 'M ' + bs + ' ' + sy +
+                        ' L ' + bm + ' ' + sy +
+                        ' L ' + bm + ' ' + ey +
+                        ' L ' + be + ' ' + ey;
+                }
                 C_path[i].setAttribute('d', nd);
                 if (C_hit[i]) C_hit[i].setAttribute('d', nd);
             }

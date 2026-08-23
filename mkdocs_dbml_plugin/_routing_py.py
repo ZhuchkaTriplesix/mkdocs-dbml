@@ -88,6 +88,39 @@ def _route_one_py(sx, sy, ex, ey, skip1, skip2, rects, n, gap, sf="right", st="l
                 break
         return [(sx, sy), (mid_x, sy), (mid_x, ey), (ex, ey)]
 
+    # S-step for staggered diagonal tables with vertical clearance
+    fx, fy, fw, fh = rects[skip1]
+    tx, ty, tw, th = rects[skip2]
+    vert_clearance = (fy + fh + 15.0 <= ty) or (ty + th + 15.0 <= fy)
+
+    if sf == "right" and st == "left" and sx >= ex and vert_clearance:
+        mid_y = (fy + fh + ty) * 0.5 if fy + fh <= ty else (ty + th + fy) * 0.5
+        stub = 24.0
+        step_pts = [
+            (sx, sy),
+            (sx + stub, sy),
+            (sx + stub, mid_y),
+            (ex - stub, mid_y),
+            (ex - stub, ey),
+            (ex, ey),
+        ]
+        if _path_hits_py(step_pts, rects, n, skip1, skip2) < 0:
+            return step_pts
+
+    if sf == "left" and st == "right" and sx <= ex and vert_clearance:
+        mid_y = (fy + fh + ty) * 0.5 if fy + fh <= ty else (ty + th + fy) * 0.5
+        stub = 24.0
+        step_pts = [
+            (sx, sy),
+            (sx - stub, sy),
+            (sx - stub, mid_y),
+            (ex + stub, mid_y),
+            (ex + stub, ey),
+            (ex, ey),
+        ]
+        if _path_hits_py(step_pts, rects, n, skip1, skip2) < 0:
+            return step_pts
+
     mid_x = (sx + ex) * 0.5
 
     blocker = _seg_hits_any_py(mid_x, y_lo, mid_x, y_hi, rects, n, skip1, skip2)
@@ -141,45 +174,80 @@ def _route_connection_py(
     tx, ty, tw, th = to_rect
     n = len(table_rects)
 
+    from_cx = fx + fw * 0.5
+    avg_cx = (
+        sum(r[0] + r[2] * 0.5 for r in table_rects) / n if n > 0 else from_cx
+    )
+
     best_cost = 1e18
     best_wp = []
     best_sf = "right"
     best_st = "left"
 
-    for sf_idx, sf in enumerate(("right", "left")):
-        for st_idx, st in enumerate(("left", "right")):
-            sx = fx + fw if sf_idx == 0 else fx
-            ex = tx if st_idx == 0 else tx + tw
+    candidates = [
+        ("right", "left"),
+        ("left", "right"),
+        ("right", "right"),
+        ("left", "left"),
+    ]
 
-            backwards = (sf == "right" and st == "left" and sx >= ex) or (
-                sf == "left" and st == "right" and sx <= ex
-            )
+    for sf, st in candidates:
+        sx = fx + fw if sf == "right" else fx
+        ex = tx if st == "left" else tx + tw
 
-            pts = _route_one_py(
-                sx,
-                field_y_from,
-                ex,
-                field_y_to,
-                from_idx,
-                to_idx,
-                table_rects,
-                n,
-                gap,
-                sf=sf,
-                st=st,
-            )
-            hit = _path_hits_py(pts, table_rects, n, from_idx, to_idx)
-            cost = _path_cost_py(pts)
-            if hit >= 0:
-                cost += 100000.0
-            if backwards:
-                cost += 50000.0
+        backwards = (sf == "right" and st == "left" and sx >= ex) or (
+            sf == "left" and st == "right" and sx <= ex
+        )
 
-            if cost < best_cost:
-                best_cost = cost
-                best_wp = pts
-                best_sf = sf
-                best_st = st
+        pts = _route_one_py(
+            sx,
+            field_y_from,
+            ex,
+            field_y_to,
+            from_idx,
+            to_idx,
+            table_rects,
+            n,
+            gap,
+            sf=sf,
+            st=st,
+        )
+        hit = _path_hits_py(pts, table_rects, n, from_idx, to_idx)
+        cost = _path_cost_py(pts)
+        if hit >= 0:
+            cost += 100000.0
+        if backwards and len(pts) == 4:
+            cost += 50000.0
+
+        # Balanced side load / corridor congestion bonus for same-side connections
+        if sf == st:
+            if sf == "right":
+                right_edge = max(fx + fw, tx + tw)
+                obst_count = sum(
+                    1
+                    for i, r in enumerate(table_rects)
+                    if i not in (from_idx, to_idx) and r[0] >= right_edge - 10.0
+                )
+                cost += obst_count * 200.0
+                if from_cx > avg_cx:
+                    cost += 10.0
+            else:
+                left_edge = min(fx, tx)
+                obst_count = sum(
+                    1
+                    for i, r in enumerate(table_rects)
+                    if i not in (from_idx, to_idx)
+                    and r[0] + r[2] <= left_edge + 10.0
+                )
+                cost += obst_count * 200.0
+                if from_cx <= avg_cx:
+                    cost += 10.0
+
+        if cost < best_cost:
+            best_cost = cost
+            best_wp = pts
+            best_sf = sf
+            best_st = st
 
     return best_wp, best_sf, best_st
 
@@ -279,6 +347,49 @@ if np is not None:
             out[3, 1] = ey
             return 4
 
+        # S-step for staggered diagonal tables with vertical clearance
+        fx = rects[skip1, 0]
+        fy = rects[skip1, 1]
+        fh = rects[skip1, 3]
+        tx = rects[skip2, 0]
+        ty = rects[skip2, 1]
+        th = rects[skip2, 3]
+        vert_clearance = (fy + fh + 15.0 <= ty) or (ty + th + 15.0 <= fy)
+
+        if sf == 0 and st == 0 and sx >= ex and vert_clearance:
+            mid_y = (fy + fh + ty) * 0.5 if (fy + fh <= ty) else (ty + th + fy) * 0.5
+            stub = 24.0
+            out[0, 0] = sx
+            out[0, 1] = sy
+            out[1, 0] = sx + stub
+            out[1, 1] = sy
+            out[2, 0] = sx + stub
+            out[2, 1] = mid_y
+            out[3, 0] = ex - stub
+            out[3, 1] = mid_y
+            out[4, 0] = ex - stub
+            out[4, 1] = ey
+            out[5, 0] = ex
+            out[5, 1] = ey
+            return 6
+
+        if sf == 1 and st == 1 and sx <= ex and vert_clearance:
+            mid_y = (fy + fh + ty) * 0.5 if (fy + fh <= ty) else (ty + th + fy) * 0.5
+            stub = 24.0
+            out[0, 0] = sx
+            out[0, 1] = sy
+            out[1, 0] = sx - stub
+            out[1, 1] = sy
+            out[2, 0] = sx - stub
+            out[2, 1] = mid_y
+            out[3, 0] = ex + stub
+            out[3, 1] = mid_y
+            out[4, 0] = ex + stub
+            out[4, 1] = ey
+            out[5, 0] = ex
+            out[5, 1] = ey
+            return 6
+
         mid_x = (sx + ex) * 0.5
 
         blocker = _seg_hits_any(mid_x, y_lo, mid_x, y_hi, rects, n, skip1, skip2)
@@ -374,6 +485,13 @@ if np is not None:
         best_sf = 0
         best_st = 0
 
+        from_cx = fx + fw * 0.5
+        avg_cx = 0.0
+        for i in range(n):
+            avg_cx += rects[i, 0] + rects[i, 2] * 0.5
+        if n > 0:
+            avg_cx /= n
+
         for sf in range(2):
             for st in range(2):
                 if sf == 0:
@@ -397,8 +515,16 @@ if np is not None:
                 cost = _path_cost(buf, n_pts)
                 if hit >= 0:
                     cost += 100000.0
-                if backwards:
+                if backwards and n_pts == 4:
                     cost += 50000.0
+
+                # Same-side load balance
+                if (sf == 0 and st == 1):  # R-R
+                    if from_cx > avg_cx:
+                        cost += 10.0
+                elif (sf == 1 and st == 0):  # L-L
+                    if from_cx <= avg_cx:
+                        cost += 10.0
 
                 if cost < best_cost:
                     best_cost = cost

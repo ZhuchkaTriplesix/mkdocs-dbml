@@ -157,4 +157,25 @@ def test_same_side_right_right_routing():
         assert wp[1][0] <= 300.0 - 48.0
 
 
+def test_diagonal_staggered_s_step_routing():
+    from mkdocs_dbml_plugin import _routing_py
+    from mkdocs_dbml_plugin.routing import route_connection
+
+    # Table 1 top-left, Table 2 bottom-right, with 30px horizontal overlap and vertical clearance
+    from_rect = (100.0, 50.0, 200.0, 100.0)   # right = 300, bottom = 150
+    to_rect = (270.0, 250.0, 200.0, 100.0)     # left = 270, top = 250 (overlap = 30px, vert clearance = 100px)
+    table_rects = [from_rect, to_rect]
+
+    wp, sf, st = route_connection(
+        from_rect, to_rect, 90.0, 290.0, 0, 1, table_rects, gap=48.0
+    )
+    # Natural S-step connection (sf="right", st="left")
+    assert sf == "right"
+    assert st == "left"
+    assert len(wp) == 6
+    # Vertical transition occurs in the inter-table vertical corridor (between y=150 and y=250)
+    assert 150.0 <= wp[2][1] <= 250.0
+
+
+
 
