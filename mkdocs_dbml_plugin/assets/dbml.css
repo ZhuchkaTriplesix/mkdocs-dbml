@@ -16,54 +16,41 @@
     top: 1rem;
     right: 1rem;
     display: flex;
+    align-items: center;
     gap: 0.5rem;
     z-index: 10;
     pointer-events: none;
 }
 
-.dbml-export-btn {
+.dbml-export-btn,
+.dbml-fullscreen-btn {
     pointer-events: auto;
     background: white;
     border: none;
-    border-radius: 6px;
-    width: 32px;
-    height: 32px;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
     cursor: pointer;
     padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
     color: #4b5563;
 }
 
-.dbml-export-btn:hover {
-    background: #6366f1;
-    color: white;
-}
-
-.dbml-fullscreen-btn {
-    pointer-events: auto;
-    background: white;
-    border: none;
-    border-radius: 8px;
-    width: 40px;
-    height: 40px;
-    cursor: pointer;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: background 0.2s, transform 0.2s;
-    color: #4b5563;
-}
-
+.dbml-export-btn:hover,
 .dbml-fullscreen-btn:hover {
     background: #6366f1;
     color: white;
     transform: scale(1.05);
+}
+
+.dbml-export-btn:focus-visible,
+.dbml-fullscreen-btn:focus-visible {
+    outline: 2px solid #6366f1;
+    outline-offset: 2px;
 }
 
 .dbml-diagram-wrapper:fullscreen {
@@ -251,22 +238,21 @@
         color: #e5e7eb;
     }
     
-    :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-export-btn {
-        background: rgba(31, 41, 55, 0.95);
-        color: #e5e7eb;
-    }
-    
-    :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-export-btn:hover {
-        background: #818cf8;
-    }
-    
+    :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-export-btn,
     :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-fullscreen-btn {
         background: rgba(31, 41, 55, 0.95);
         color: #e5e7eb;
     }
     
+    :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-export-btn:hover,
     :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-fullscreen-btn:hover {
         background: #818cf8;
+        color: white;
+    }
+
+    :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-export-btn:focus-visible,
+    :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-fullscreen-btn:focus-visible {
+        outline-color: #818cf8;
     }
     
     :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-table-bg {
@@ -322,17 +308,7 @@
 
 [data-md-color-scheme="slate"] .dbml-export-btn,
 [data-theme="dark"] .dbml-export-btn,
-.dark .dbml-export-btn {
-    background: rgba(31, 41, 55, 0.95);
-    color: #e5e7eb;
-}
-
-[data-md-color-scheme="slate"] .dbml-export-btn:hover,
-[data-theme="dark"] .dbml-export-btn:hover,
-.dark .dbml-export-btn:hover {
-    background: #818cf8;
-}
-
+.dark .dbml-export-btn,
 [data-md-color-scheme="slate"] .dbml-fullscreen-btn,
 [data-theme="dark"] .dbml-fullscreen-btn,
 .dark .dbml-fullscreen-btn {
@@ -340,10 +316,23 @@
     color: #e5e7eb;
 }
 
+[data-md-color-scheme="slate"] .dbml-export-btn:hover,
+[data-theme="dark"] .dbml-export-btn:hover,
+.dark .dbml-export-btn:hover,
 [data-md-color-scheme="slate"] .dbml-fullscreen-btn:hover,
 [data-theme="dark"] .dbml-fullscreen-btn:hover,
 .dark .dbml-fullscreen-btn:hover {
     background: #818cf8;
+    color: white;
+}
+
+[data-md-color-scheme="slate"] .dbml-export-btn:focus-visible,
+[data-theme="dark"] .dbml-export-btn:focus-visible,
+.dark .dbml-export-btn:focus-visible,
+[data-md-color-scheme="slate"] .dbml-fullscreen-btn:focus-visible,
+[data-theme="dark"] .dbml-fullscreen-btn:focus-visible,
+.dark .dbml-fullscreen-btn:focus-visible {
+    outline-color: #818cf8;
 }
 
 [data-md-color-scheme="slate"] .dbml-table-bg,
