@@ -97,7 +97,7 @@ cdef list _route_one(double sx, double sy, double ex, double ey,
 
 
 def route_connection(from_rect, to_rect, field_y_from, field_y_to,
-                     from_idx, to_idx, table_rects, gap=32.0):
+                     from_idx, to_idx, table_rects, gap=48.0):
     cdef int n = len(table_rects)
     cdef Rect *rects = <Rect *>malloc(n * sizeof(Rect))
     if rects == NULL:
