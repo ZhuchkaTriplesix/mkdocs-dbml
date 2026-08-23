@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from typing import Optional
 from pydbml import PyDBML
 import hashlib
 from pathlib import Path
@@ -463,7 +466,7 @@ class DbmlRenderer:
         self,
         ref,
         lane_offset: float = 0.0,
-        preferred_side_to: str | None = None,
+        preferred_side_to: Optional[str] = None,
     ) -> tuple[str, str]:
         col1 = ref.col1[0] if ref.col1 else None
         col2 = ref.col2[0] if ref.col2 else None

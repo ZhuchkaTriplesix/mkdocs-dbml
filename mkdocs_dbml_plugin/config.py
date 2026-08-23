@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 HEADER_HEIGHT = 48
 ROW_HEIGHT = 36
 TABLE_BOTTOM_PADDING = 12
