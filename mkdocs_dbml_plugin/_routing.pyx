@@ -225,12 +225,35 @@ def route_connection(from_rect, to_rect, field_y_from, field_y_to,
 
             if cost < best_cost:
                 best_cost = cost
-                best_wp = wp
                 best_sf = sf
                 best_st = st
 
     free(rects)
-    return best_wp, best_sf, best_st
+
+    cdef double dx
+    cdef tuple cp1, cp2
+    sx = (fx + fw) if best_sf == 'right' else fx
+    ex = tx if best_st == 'left' else (tx + tw)
+
+    if best_sf == 'right' and best_st == 'left':
+        dx = (48.0 if fabs(ex - sx) * 0.5 < 48.0 else fabs(ex - sx) * 0.5) + lane_offset * 0.5
+        cp1 = (sx + dx, field_y_from)
+        cp2 = (ex - dx, field_y_to)
+    elif best_sf == 'left' and best_st == 'right':
+        dx = (48.0 if fabs(sx - ex) * 0.5 < 48.0 else fabs(sx - ex) * 0.5) + lane_offset * 0.5
+        cp1 = (sx - dx, field_y_from)
+        cp2 = (ex + dx, field_y_to)
+    elif best_sf == 'right' and best_st == 'right':
+        dx = 48.0 + fabs(field_y_to - field_y_from) * 0.25 + lane_offset
+        cp1 = ((sx if sx > ex else ex) + dx, field_y_from)
+        cp2 = ((sx if sx > ex else ex) + dx, field_y_to)
+    else:  # left to left
+        dx = 48.0 + fabs(field_y_to - field_y_from) * 0.25 + lane_offset
+        cp1 = ((sx if sx < ex else ex) - dx, field_y_from)
+        cp2 = ((sx if sx < ex else ex) - dx, field_y_to)
+
+    cdef list bezier_wp = [(sx, field_y_from), cp1, cp2, (ex, field_y_to)]
+    return bezier_wp, best_sf, best_st
 
 
 def build_table_rects(positions, dimensions):
