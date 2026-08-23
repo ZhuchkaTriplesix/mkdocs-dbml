@@ -177,5 +177,28 @@ def test_diagonal_staggered_s_step_routing():
     assert 150.0 <= wp[2][1] <= 250.0
 
 
+def test_parallel_connections_multi_lane_offsets():
+    from mkdocs_dbml_plugin.routing import route_connection
+
+    from_rect = (300.0, 50.0, 150.0, 120.0)
+    to_rect = (310.0, 250.0, 160.0, 120.0)
+    table_rects = [from_rect, to_rect]
+
+    wp1, sf1, st1 = route_connection(
+        from_rect, to_rect, 80.0, 280.0, 0, 1, table_rects, gap=48.0, lane_offset=0.0
+    )
+    wp2, sf2, st2 = route_connection(
+        from_rect, to_rect, 100.0, 300.0, 0, 1, table_rects, gap=48.0, lane_offset=14.0
+    )
+
+    assert sf1 == sf2
+    assert st1 == st2
+    # Verify that the two parallel vertical corridors are separated by the lane offset
+    mid_x1 = wp1[1][0]
+    mid_x2 = wp2[1][0]
+    assert abs(abs(mid_x2 - mid_x1) - 14.0) < 1e-5
+
+
+
 
 

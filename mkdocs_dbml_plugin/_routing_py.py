@@ -62,28 +62,30 @@ def _path_cost_py(pts):
     return cost
 
 
-def _route_one_py(sx, sy, ex, ey, skip1, skip2, rects, n, gap, sf="right", st="left"):
+def _route_one_py(
+    sx, sy, ex, ey, skip1, skip2, rects, n, gap, sf="right", st="left", lane_offset=0.0
+):
     y_lo = min(sy, ey)
     y_hi = max(sy, ey)
 
     if sf == "right" and st == "right":
-        mid_x = max(sx, ex) + gap
+        mid_x = max(sx, ex) + gap + lane_offset
         for _ in range(n):
             blocker = _seg_hits_any_py(mid_x, y_lo, mid_x, y_hi, rects, n, skip1, skip2)
             if blocker >= 0:
                 bx, by, bw, bh = rects[blocker]
-                mid_x = max(mid_x, bx + bw + gap)
+                mid_x = max(mid_x, bx + bw + gap + lane_offset)
             else:
                 break
         return [(sx, sy), (mid_x, sy), (mid_x, ey), (ex, ey)]
 
     if sf == "left" and st == "left":
-        mid_x = min(sx, ex) - gap
+        mid_x = min(sx, ex) - (gap + lane_offset)
         for _ in range(n):
             blocker = _seg_hits_any_py(mid_x, y_lo, mid_x, y_hi, rects, n, skip1, skip2)
             if blocker >= 0:
                 bx, by, bw, bh = rects[blocker]
-                mid_x = min(mid_x, bx - gap)
+                mid_x = min(mid_x, bx - (gap + lane_offset))
             else:
                 break
         return [(sx, sy), (mid_x, sy), (mid_x, ey), (ex, ey)]
@@ -94,7 +96,11 @@ def _route_one_py(sx, sy, ex, ey, skip1, skip2, rects, n, gap, sf="right", st="l
     vert_clearance = (fy + fh + 15.0 <= ty) or (ty + th + 15.0 <= fy)
 
     if sf == "right" and st == "left" and sx >= ex and vert_clearance:
-        mid_y = (fy + fh + ty) * 0.5 if fy + fh <= ty else (ty + th + fy) * 0.5
+        mid_y = (
+            (fy + fh + ty) * 0.5 + lane_offset * 0.5
+            if fy + fh <= ty
+            else (ty + th + fy) * 0.5 + lane_offset * 0.5
+        )
         stub = 24.0
         step_pts = [
             (sx, sy),
@@ -108,7 +114,11 @@ def _route_one_py(sx, sy, ex, ey, skip1, skip2, rects, n, gap, sf="right", st="l
             return step_pts
 
     if sf == "left" and st == "right" and sx <= ex and vert_clearance:
-        mid_y = (fy + fh + ty) * 0.5 if fy + fh <= ty else (ty + th + fy) * 0.5
+        mid_y = (
+            (fy + fh + ty) * 0.5 - lane_offset * 0.5
+            if fy + fh <= ty
+            else (ty + th + fy) * 0.5 - lane_offset * 0.5
+        )
         stub = 24.0
         step_pts = [
             (sx, sy),
@@ -121,7 +131,9 @@ def _route_one_py(sx, sy, ex, ey, skip1, skip2, rects, n, gap, sf="right", st="l
         if _path_hits_py(step_pts, rects, n, skip1, skip2) < 0:
             return step_pts
 
-    mid_x = (sx + ex) * 0.5
+    mid_x = (sx + ex) * 0.5 + (
+        lane_offset * 0.5 if sf == "right" else -lane_offset * 0.5
+    )
 
     blocker = _seg_hits_any_py(mid_x, y_lo, mid_x, y_hi, rects, n, skip1, skip2)
     if blocker < 0:
@@ -169,6 +181,7 @@ def _route_connection_py(
     to_idx,
     table_rects,
     gap=48.0,
+    lane_offset=0.0,
 ):
     fx, fy, fw, fh = from_rect
     tx, ty, tw, th = to_rect
@@ -211,6 +224,7 @@ def _route_connection_py(
             gap,
             sf=sf,
             st=st,
+            lane_offset=lane_offset,
         )
         hit = _path_hits_py(pts, table_rects, n, from_idx, to_idx)
         cost = _path_cost_py(pts)
@@ -300,7 +314,9 @@ if np is not None:
         return cost
 
     @njit(cache=True)
-    def _route_one(sx, sy, ex, ey, skip1, skip2, rects, n, gap, sf, st, out):
+    def _route_one(
+        sx, sy, ex, ey, skip1, skip2, rects, n, gap, sf, st, out, lane_offset=0.0
+    ):
         """
         Build orthogonal polyline, write into out array.
         Returns number of waypoints written.
@@ -309,13 +325,13 @@ if np is not None:
         y_hi = max(sy, ey)
 
         if sf == 0 and st == 1:  # right to right
-            mid_x = max(sx, ex) + gap
+            mid_x = max(sx, ex) + gap + lane_offset
             for _ in range(n):
                 blocker = _seg_hits_any(mid_x, y_lo, mid_x, y_hi, rects, n, skip1, skip2)
                 if blocker >= 0:
                     bx = rects[blocker, 0]
                     bw = rects[blocker, 2]
-                    mid_x = max(mid_x, bx + bw + gap)
+                    mid_x = max(mid_x, bx + bw + gap + lane_offset)
                 else:
                     break
             out[0, 0] = sx
@@ -329,12 +345,12 @@ if np is not None:
             return 4
 
         if sf == 1 and st == 0:  # left to left
-            mid_x = min(sx, ex) - gap
+            mid_x = min(sx, ex) - (gap + lane_offset)
             for _ in range(n):
                 blocker = _seg_hits_any(mid_x, y_lo, mid_x, y_hi, rects, n, skip1, skip2)
                 if blocker >= 0:
                     bx = rects[blocker, 0]
-                    mid_x = min(mid_x, bx - gap)
+                    mid_x = min(mid_x, bx - (gap + lane_offset))
                 else:
                     break
             out[0, 0] = sx
@@ -357,7 +373,11 @@ if np is not None:
         vert_clearance = (fy + fh + 15.0 <= ty) or (ty + th + 15.0 <= fy)
 
         if sf == 0 and st == 0 and sx >= ex and vert_clearance:
-            mid_y = (fy + fh + ty) * 0.5 if (fy + fh <= ty) else (ty + th + fy) * 0.5
+            mid_y = (
+                (fy + fh + ty) * 0.5 + lane_offset * 0.5
+                if (fy + fh <= ty)
+                else (ty + th + fy) * 0.5 + lane_offset * 0.5
+            )
             stub = 24.0
             out[0, 0] = sx
             out[0, 1] = sy
@@ -374,7 +394,11 @@ if np is not None:
             return 6
 
         if sf == 1 and st == 1 and sx <= ex and vert_clearance:
-            mid_y = (fy + fh + ty) * 0.5 if (fy + fh <= ty) else (ty + th + fy) * 0.5
+            mid_y = (
+                (fy + fh + ty) * 0.5 - lane_offset * 0.5
+                if (fy + fh <= ty)
+                else (ty + th + fy) * 0.5 - lane_offset * 0.5
+            )
             stub = 24.0
             out[0, 0] = sx
             out[0, 1] = sy
@@ -390,7 +414,9 @@ if np is not None:
             out[5, 1] = ey
             return 6
 
-        mid_x = (sx + ex) * 0.5
+        mid_x = (sx + ex) * 0.5 + (
+            lane_offset * 0.5 if sf == 0 else -lane_offset * 0.5
+        )
 
         blocker = _seg_hits_any(mid_x, y_lo, mid_x, y_hi, rects, n, skip1, skip2)
         if blocker < 0:
@@ -476,6 +502,7 @@ if np is not None:
         rects,
         n,
         gap,
+        lane_offset,
     ):
         """Try all 4 side combos, return best waypoints + side indices."""
         buf = np.empty((6, 2), dtype=np.float64)
@@ -508,7 +535,19 @@ if np is not None:
                 )
 
                 n_pts = _route_one(
-                    sx, field_y_from, ex, field_y_to, skip1, skip2, rects, n, gap, sf, st, buf
+                    sx,
+                    field_y_from,
+                    ex,
+                    field_y_to,
+                    skip1,
+                    skip2,
+                    rects,
+                    n,
+                    gap,
+                    sf,
+                    st,
+                    buf,
+                    lane_offset,
                 )
 
                 hit = _path_hits(buf, n_pts, rects, n, skip1, skip2)
@@ -546,6 +585,7 @@ if np is not None:
         to_idx,
         table_rects,
         gap=48.0,
+        lane_offset=0.0,
     ):
         fx, fy, fw, fh = from_rect
         tx, ty, tw, th = to_rect
@@ -557,28 +597,29 @@ if np is not None:
             else np.array(table_rects, dtype=np.float64)
         )
 
-        buf, n_pts, sf, st = _find_best(
-            fx,
-            fy,
-            fw,
-            fh,
-            tx,
-            ty,
-            tw,
-            th,
-            field_y_from,
-            field_y_to,
+        best_buf, n_pts, best_sf, best_st = _find_best(
+            float(fx),
+            float(fy),
+            float(fw),
+            float(fh),
+            float(tx),
+            float(ty),
+            float(tw),
+            float(th),
+            float(field_y_from),
+            float(field_y_to),
             from_idx,
             to_idx,
             rects,
             n,
-            gap,
+            float(gap),
+            float(lane_offset),
         )
 
-        waypoints = [(buf[i, 0], buf[i, 1]) for i in range(n_pts)]
-        side_from = "right" if sf == 0 else "left"
-        side_to = "left" if st == 0 else "right"
-        return waypoints, side_from, side_to
+        pts = [(best_buf[i, 0], best_buf[i, 1]) for i in range(n_pts)]
+        sf_str = "right" if best_sf == 0 else "left"
+        st_str = "left" if best_st == 0 else "right"
+        return pts, sf_str, st_str
 
     route_connection = _route_connection_np
 else:

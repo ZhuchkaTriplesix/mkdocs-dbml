@@ -223,8 +223,20 @@ class DbmlRenderer:
 
         if parsed.refs:
             svg_parts.append('<g class="dbml-relationships-layer">')
+            pair_counts: dict[tuple[int, int], int] = {}
             for ref in parsed.refs:
-                svg_parts.append(self._render_relationship_line(ref))
+                col1 = ref.col1[0] if ref.col1 else None
+                col2 = ref.col2[0] if ref.col2 else None
+                if col1 and col2:
+                    t1_idx = self._table_idx.get(col1.table.name, -1)
+                    t2_idx = self._table_idx.get(col2.table.name, -1)
+                    pair_key = (min(t1_idx, t2_idx), max(t1_idx, t2_idx))
+                    lane_idx = pair_counts.get(pair_key, 0)
+                    pair_counts[pair_key] = lane_idx + 1
+                else:
+                    lane_idx = 0
+                lane_offset = lane_idx * 14.0
+                svg_parts.append(self._render_relationship_line(ref, lane_offset=lane_offset))
             svg_parts.append("</g>")
 
         svg_parts.append('<g class="dbml-tables-layer">')
@@ -433,7 +445,7 @@ class DbmlRenderer:
 
         return "".join(svg)
 
-    def _render_relationship_line(self, ref) -> str:
+    def _render_relationship_line(self, ref, lane_offset: float = 0.0) -> str:
         col1 = ref.col1[0] if ref.col1 else None
         col2 = ref.col2[0] if ref.col2 else None
 
@@ -474,6 +486,7 @@ class DbmlRenderer:
             to_idx,
             getattr(self, "_table_rects_np", self._table_rects),
             gap=CONN_GAP,
+            lane_offset=lane_offset,
         )
 
         parts = [f"M {waypoints[0][0]} {waypoints[0][1]}"]
