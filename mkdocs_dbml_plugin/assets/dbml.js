@@ -522,10 +522,10 @@ D.addEventListener('DOMContentLoaded', function() {
                     var co = 0;
 
                     if (j === 1) { // R -> R
-                        mx = (sx > ex ? sx : ex) + 32;
+                        mx = (sx > ex ? sx : ex) + 48;
                         co = (mx - sx) + (mx - ex) + (sy > ey ? sy - ey : ey - sy);
                     } else if (j === 2) { // L -> L
-                        mx = (sx < ex ? sx : ex) - 32;
+                        mx = (sx < ex ? sx : ex) - 48;
                         co = (sx - mx) + (ex - mx) + (sy > ey ? sy - ey : ey - sy);
                     } else if (j === 0) { // R -> L
                         mx = (sx + ex) * 0.5;

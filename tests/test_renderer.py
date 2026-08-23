@@ -128,33 +128,33 @@ def test_same_side_right_right_routing():
 
     # Explicit right-to-right
     wp_rr = _routing_py._route_one_py(
-        450.0, 80.0, 470.0, 280.0, 0, 1, table_rects, 2, 32.0, sf="right", st="right"
+        450.0, 80.0, 470.0, 280.0, 0, 1, table_rects, 2, 48.0, sf="right", st="right"
     )
     assert len(wp_rr) == 4
     assert wp_rr[0][0] == 450.0
-    assert wp_rr[1][0] >= 470.0 + 32.0
+    assert wp_rr[1][0] >= 470.0 + 48.0
     assert wp_rr[2][0] == wp_rr[1][0]
     assert wp_rr[3][0] == 470.0
 
     # Explicit left-to-left
     wp_ll = _routing_py._route_one_py(
-        300.0, 80.0, 310.0, 280.0, 0, 1, table_rects, 2, 32.0, sf="left", st="left"
+        300.0, 80.0, 310.0, 280.0, 0, 1, table_rects, 2, 48.0, sf="left", st="left"
     )
     assert len(wp_ll) == 4
     assert wp_ll[0][0] == 300.0
-    assert wp_ll[1][0] <= 300.0 - 32.0
+    assert wp_ll[1][0] <= 300.0 - 48.0
     assert wp_ll[2][0] == wp_ll[1][0]
     assert wp_ll[3][0] == 310.0
 
     # Global route_connection picks the best same-side outer corridor
     wp, sf, st = route_connection(
-        from_rect, to_rect, 80.0, 280.0, 0, 1, table_rects, gap=32.0
+        from_rect, to_rect, 80.0, 280.0, 0, 1, table_rects, gap=48.0
     )
     assert len(wp) == 4
     if sf == "right" and st == "right":
-        assert wp[1][0] >= 470.0 + 32.0
+        assert wp[1][0] >= 470.0 + 48.0
     elif sf == "left" and st == "left":
-        assert wp[1][0] <= 300.0 - 32.0
+        assert wp[1][0] <= 300.0 - 48.0
 
 
 

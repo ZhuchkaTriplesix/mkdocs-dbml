@@ -135,7 +135,7 @@ def _route_connection_py(
     from_idx,
     to_idx,
     table_rects,
-    gap=32.0,
+    gap=48.0,
 ):
     fx, fy, fw, fh = from_rect
     tx, ty, tw, th = to_rect
@@ -419,7 +419,7 @@ if np is not None:
         from_idx,
         to_idx,
         table_rects,
-        gap=32.0,
+        gap=48.0,
     ):
         fx, fy, fw, fh = from_rect
         tx, ty, tw, th = to_rect
