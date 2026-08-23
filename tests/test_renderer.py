@@ -233,6 +233,35 @@ def test_multi_inbound_preferred_side_balancing():
     assert st2 == "right"
 
 
+def test_avoid_cutting_through_table_interior():
+    from mkdocs_dbml_plugin.routing import route_connection
+
+    # posts at bottom-left: x in [90, 390], y in [600, 900]
+    # users at top-center: x in [240, 540], y in [100, 340]
+    posts_rect = (90.0, 600.0, 300.0, 300.0)
+    users_rect = (240.0, 100.0, 300.0, 240.0)
+    table_rects = [posts_rect, users_rect]
+
+    wp, sf, st = route_connection(
+        posts_rect, users_rect, 720.0, 160.0, 0, 1, table_rects, gap=48.0
+    )
+
+    # Ensure no segment cuts through users interior [242..538] x [102..338]
+    for i in range(len(wp) - 1):
+        x1, y1 = wp[i]
+        x2, y2 = wp[i + 1]
+        if abs(x1 - x2) < 1e-3:  # vertical
+            vx = x1
+            if 242.0 < vx < 538.0:
+                assert not (min(y1, y2) < 338.0 and max(y1, y2) > 102.0)
+        elif abs(y1 - y2) < 1e-3:  # horizontal
+            hy = y1
+            if 102.0 < hy < 338.0:
+                assert not (min(x1, x2) < 538.0 and max(x1, x2) > 242.0)
+
+
+
+
 
 
 

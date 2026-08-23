@@ -161,14 +161,45 @@ def route_connection(from_rect, to_rect, field_y_from, field_y_to,
                             from_idx, to_idx, rects, n, gap, sf, st, lane_offset)
             cost = _path_cost(wp)
 
-            for j in range(1, len(wp) - 1):
-                mx, my = wp[j]
+            # Check collisions
+            for j in range(len(wp) - 1):
+                x1, y1 = wp[j]
+                x2, y2 = wp[j + 1]
+                lo_x = min(x1, x2)
+                hi_x = max(x1, x2)
+                lo_y = min(y1, y2)
+                hi_y = max(y1, y2)
+
+                # Third-party tables
                 for k in range(n):
                     if k == from_idx or k == to_idx:
                         continue
-                    if rects[k].x <= mx <= rects[k].x + rects[k].w and rects[k].y <= my <= rects[k].y + rects[k].h:
+                    if lo_x <= rects[k].x + rects[k].w + 5.0 and hi_x >= rects[k].x - 5.0 and lo_y <= rects[k].y + rects[k].h + 5.0 and hi_y >= rects[k].y - 5.0:
                         cost += 100000
                         break
+
+                # from_table and to_table interior check
+                if fabs(x1 - x2) < 1e-3:  # Vertical segment
+                    for k in (from_idx, to_idx):
+                        if rects[k].x + 2.0 < x1 < rects[k].x + rects[k].w - 2.0:
+                            if lo_y < rects[k].y + rects[k].h - 2.0 and hi_y > rects[k].y + 2.0:
+                                cost += 100000
+                                break
+                elif fabs(y1 - y2) < 1e-3:  # Horizontal segment
+                    for k in (from_idx, to_idx):
+                        if rects[k].y + 2.0 < y1 < rects[k].y + rects[k].h - 2.0:
+                            if j > 0 and j < len(wp) - 2:
+                                if lo_x < rects[k].x + rects[k].w - 2.0 and hi_x > rects[k].x + 2.0:
+                                    cost += 100000
+                                    break
+                            elif j == 0 and k == from_idx:
+                                if (x1 >= rects[k].x + rects[k].w - 2.0 and x2 < rects[k].x + rects[k].w - 2.0) or (x1 <= rects[k].x + 2.0 and x2 > rects[k].x + 2.0):
+                                    cost += 100000
+                                    break
+                            elif j == len(wp) - 2 and k == to_idx:
+                                if (x2 >= rects[k].x + rects[k].w - 2.0 and x1 < rects[k].x + rects[k].w - 2.0) or (x2 <= rects[k].x + 2.0 and x1 > rects[k].x + 2.0):
+                                    cost += 100000
+                                    break
 
             if backwards and len(wp) == 4:
                 cost += 50000

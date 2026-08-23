@@ -607,6 +607,7 @@ D.addEventListener('DOMContentLoaded', function() {
                         var s3L = mx < ex ? mx : ex, s3R = mx > ex ? mx : ex;
                         var vT = sy < ey ? sy : ey, vB = sy > ey ? sy : ey;
 
+                        // Check third-party tables
                         for (var k = 0; k < TN; k++) {
                             if (k === fi || k === ti) continue;
                             var b = TA[k];
@@ -621,6 +622,28 @@ D.addEventListener('DOMContentLoaded', function() {
                             }
                             if (ey >= bT && ey <= bB && s3R >= bL && s3L <= bR) {
                                 co += 100000; break;
+                            }
+                        }
+
+                        // Check from_table and to_table interiors
+                        var endPts = [fi, ti];
+                        for (var ep = 0; ep < 2; ep++) {
+                            var ek = endPts[ep];
+                            var eb = TA[ek];
+                            var ebL = eb.ox + eb.dx + 2, ebR = eb.ox + eb.dx + eb.ow - 2;
+                            var ebT = eb.oy + eb.dy + 2, ebB = eb.oy + eb.dy + eb.oh - 2;
+
+                            if (mx > ebL && mx < ebR && vB > ebT && vT < ebB) {
+                                co += 100000; break;
+                            }
+                            if (ep === 0) { // from table
+                                if ((sx >= ebR && mx < ebR) || (sx <= ebL && mx > ebL)) {
+                                    co += 100000; break;
+                                }
+                            } else { // to table
+                                if ((ex >= ebR && mx < ebR) || (ex <= ebL && mx > ebL)) {
+                                    co += 100000; break;
+                                }
                             }
                         }
                     }
