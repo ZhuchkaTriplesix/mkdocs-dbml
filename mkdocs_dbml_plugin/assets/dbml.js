@@ -263,11 +263,37 @@ D.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        var activePointers = new Map();
+        var initialPinchDist = 0;
+        var initialPinchScale = 1;
+        var initialPinchMidX = 0;
+        var initialPinchMidY = 0;
+
+        function initPinch() {
+            M = 4;
+            DR = null;
+            GR = null;
+            var pts = Array.from(activePointers.values());
+            var p1 = pts[0], p2 = pts[1];
+            initialPinchDist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+            initialPinchScale = S;
+            initialPinchMidX = (p1.x + p2.x) * 0.5;
+            initialPinchMidY = (p1.y + p2.y) * 0.5;
+            CX0 = TX;
+            CY0 = TY;
+        }
+
         for (var i = 0; i < VTG.length; i++) { (function(v) {
             if (!v.rect) return;
             v.rect.addEventListener('pointerdown', function(e) {
                 e.stopPropagation();
                 e.preventDefault();
+                activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                if (activePointers.size === 2) {
+                    initPinch();
+                    W.setPointerCapture(e.pointerId);
+                    return;
+                }
                 M = 3; GR = v.members;
                 MX0 = e.clientX; MY0 = e.clientY;
                 for (var k = 0; k < GR.length; k++) {
@@ -334,6 +360,12 @@ D.addEventListener('DOMContentLoaded', function() {
             td.e.addEventListener('pointerdown', function(e) {
                 e.stopPropagation();
                 e.preventDefault();
+                activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                if (activePointers.size === 2) {
+                    initPinch();
+                    W.setPointerCapture(e.pointerId);
+                    return;
+                }
                 M = 1; DR = td;
                 IX = td.dx; IY = td.dy;
                 MX0 = e.clientX; MY0 = e.clientY;
@@ -348,6 +380,12 @@ D.addEventListener('DOMContentLoaded', function() {
         })(TA[i]); }
 
         W.addEventListener('pointerdown', function(e) {
+            activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            if (activePointers.size === 2) {
+                initPinch();
+                W.setPointerCapture(e.pointerId);
+                return;
+            }
             if (M !== 0) return;
             e.preventDefault();
             M = 2;
@@ -358,7 +396,30 @@ D.addEventListener('DOMContentLoaded', function() {
         });
 
         W.addEventListener('pointermove', function(e) {
-            if (M === 1) {
+            if (activePointers.has(e.pointerId)) {
+                activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            }
+            if (M === 4 && activePointers.size >= 2) {
+                var pts = Array.from(activePointers.values());
+                var p1 = pts[0], p2 = pts[1];
+                var curDist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                if (initialPinchDist > 0) {
+                    var factor = curDist / initialPinchDist;
+                    var ns = initialPinchScale * factor;
+                    if (ns < 0.1) ns = 0.1; else if (ns > 3) ns = 3;
+                    var curMidX = (p1.x + p2.x) * 0.5;
+                    var curMidY = (p1.y + p2.y) * 0.5;
+                    var r = W.getBoundingClientRect();
+                    var px = initialPinchMidX - r.left, py = initialPinchMidY - r.top;
+                    var c = ns / initialPinchScale;
+                    TX = (px - (px - CX0) * c) + (curMidX - initialPinchMidX);
+                    TY = (py - (py - CY0) * c) + (curMidY - initialPinchMidY);
+                    S = ns;
+                    svg.style.transform = 'translate(' + TX + 'px,' + TY + 'px) scale(' + S + ')';
+                }
+                return;
+            }
+            if (M === 1 && DR) {
                 var invS = 1 / S;
                 DR.dx = IX + (e.clientX - MX0) * invS;
                 DR.dy = IY + (e.clientY - MY0) * invS;
@@ -373,7 +434,7 @@ D.addEventListener('DOMContentLoaded', function() {
                         _rafPending = false;
                     });
                 }
-            } else if (M === 3) {
+            } else if (M === 3 && GR) {
                 var invS = 1 / S;
                 var dX = (e.clientX - MX0) * invS;
                 var dY = (e.clientY - MY0) * invS;
@@ -399,8 +460,16 @@ D.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        W.addEventListener('pointerup', function(e) {
-            W.releasePointerCapture(e.pointerId);
+        function endPointer(e) {
+            activePointers.delete(e.pointerId);
+            try { W.releasePointerCapture(e.pointerId); } catch(err) {}
+            if (M === 4) {
+                if (activePointers.size < 2) {
+                    M = 0;
+                    W.style.cursor = 'grab';
+                }
+                return;
+            }
             if (M === 2) W.style.cursor = 'grab';
             if (M === 3) {
                 for (var k = 0; k < VTG.length; k++) {
@@ -408,7 +477,10 @@ D.addEventListener('DOMContentLoaded', function() {
                 }
             }
             M = 0; DR = null; GR = null;
-        });
+        }
+
+        W.addEventListener('pointerup', endPointer);
+        W.addEventListener('pointercancel', endPointer);
 
         W.addEventListener('wheel', function(e) {
             e.preventDefault();
