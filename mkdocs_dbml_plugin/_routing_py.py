@@ -135,7 +135,7 @@ def _route_connection_py(
     from_idx,
     to_idx,
     table_rects,
-    gap=20.0,
+    gap=32.0,
 ):
     fx, fy, fw, fh = from_rect
     tx, ty, tw, th = to_rect
@@ -148,8 +148,8 @@ def _route_connection_py(
 
     for sf_idx, sf in enumerate(("right", "left")):
         for st_idx, st in enumerate(("left", "right")):
-            sx = fx + fw + 12.0 if sf_idx == 0 else fx - 12.0
-            ex = tx - 12.0 if st_idx == 0 else tx + tw + 12.0
+            sx = fx + fw if sf_idx == 0 else fx
+            ex = tx if st_idx == 0 else tx + tw
 
             backwards = (sf == "right" and st == "left" and sx >= ex) or (
                 sf == "left" and st == "right" and sx <= ex
@@ -377,13 +377,13 @@ if np is not None:
         for sf in range(2):
             for st in range(2):
                 if sf == 0:
-                    sx = fx + fw + 12.0
+                    sx = fx + fw
                 else:
-                    sx = fx - 12.0
+                    sx = fx
                 if st == 0:
-                    ex = tx - 12.0
+                    ex = tx
                 else:
-                    ex = tx + tw + 12.0
+                    ex = tx + tw
 
                 backwards = (sf == 0 and st == 0 and sx >= ex) or (
                     sf == 1 and st == 1 and sx <= ex
@@ -419,7 +419,7 @@ if np is not None:
         from_idx,
         to_idx,
         table_rects,
-        gap=20.0,
+        gap=32.0,
     ):
         fx, fy, fw, fh = from_rect
         tx, ty, tw, th = to_rect

@@ -509,10 +509,10 @@ D.addEventListener('DOMContentLoaded', function() {
                 // j=1: R -> R (fR -> tR)
                 // j=2: L -> L (fL -> tL)
                 // j=3: L -> R (fL -> tR)
-                _sxA[0] = fR + 12; _exA[0] = tL - 12;
-                _sxA[1] = fR + 12; _exA[1] = tR + 12;
-                _sxA[2] = fL - 12; _exA[2] = tL - 12;
-                _sxA[3] = fL - 12; _exA[3] = tR + 12;
+                _sxA[0] = fR; _exA[0] = tL;
+                _sxA[1] = fR; _exA[1] = tR;
+                _sxA[2] = fL; _exA[2] = tL;
+                _sxA[3] = fL; _exA[3] = tR;
 
                 var bc = 1e18, bs = 0, be = 0, bm = 0;
 
@@ -522,10 +522,10 @@ D.addEventListener('DOMContentLoaded', function() {
                     var co = 0;
 
                     if (j === 1) { // R -> R
-                        mx = (sx > ex ? sx : ex) + 20;
+                        mx = (sx > ex ? sx : ex) + 32;
                         co = (mx - sx) + (mx - ex) + (sy > ey ? sy - ey : ey - sy);
                     } else if (j === 2) { // L -> L
-                        mx = (sx < ex ? sx : ex) - 20;
+                        mx = (sx < ex ? sx : ex) - 32;
                         co = (sx - mx) + (ex - mx) + (sy > ey ? sy - ey : ey - sy);
                     } else if (j === 0) { // R -> L
                         mx = (sx + ex) * 0.5;
