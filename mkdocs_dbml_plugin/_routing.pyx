@@ -97,7 +97,7 @@ cdef list _route_one(double sx, double sy, double ex, double ey,
 
 
 def route_connection(from_rect, to_rect, field_y_from, field_y_to,
-                     from_idx, to_idx, table_rects, gap=20.0):
+                     from_idx, to_idx, table_rects, gap=32.0):
     cdef int n = len(table_rects)
     cdef Rect *rects = <Rect *>malloc(n * sizeof(Rect))
     if rects == NULL:
@@ -124,8 +124,8 @@ def route_connection(from_rect, to_rect, field_y_from, field_y_to,
 
     for sf in ('right', 'left'):
         for st in ('right', 'left'):
-            sx = (fx + fw + 12.0) if sf == 'right' else (fx - 12.0)
-            ex = (tx - 12.0) if st == 'left' else (tx + tw + 12.0)
+            sx = (fx + fw) if sf == 'right' else fx
+            ex = tx if st == 'left' else (tx + tw)
 
             backwards = (sf == 'right' and st == 'left' and sx >= ex) or (sf == 'left' and st == 'right' and sx <= ex)
 
