@@ -209,17 +209,24 @@
     .dbml-controls {
         top: 0.5rem;
         right: 0.5rem;
+        gap: 0.35rem;
     }
     
+    .dbml-export-btn,
     .dbml-fullscreen-btn {
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
     }
     
     .dbml-legend {
-        position: static;
-        margin-top: 1rem;
-        flex-wrap: wrap;
+        position: absolute;
+        bottom: 0.5rem;
+        left: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        gap: 0.4rem;
+        font-size: 9px;
+        max-width: calc(100% - 1rem);
+        overflow-x: auto;
     }
 }
 
