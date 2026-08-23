@@ -5,28 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-02-27
+## [1.1.0] - 2026-08-23
 
 ### Added
-
-- Interactive ERD diagrams from DBML code blocks in MkDocs
-- Field-to-field relationship lines with orthogonal routing (lines avoid tables)
-- Drag & drop tables, pan canvas, mouse wheel zoom
-- Click relationship line to highlight it and connected fields
-- Fullscreen mode (button top-right)
-- 7 color themes: default, ocean, sunset, forest, dark, dark_gray, black
-- Embedding native `.dbml` files: `file: path/schema.dbml` or single-line path in a dbml block
-- Crow's foot notation (one, many, optional)
-- Material Design 3 icons for PK, FK, Not Null, Unique
-- Optional Cython routing for performance; Numba JIT / pure Python fallback
+- **Smooth Cubic Bézier Curves**: Modern, elegant relationship curves (matching dbdiagram.io / React Flow industry standard) with automatic horizontal tangent alignment for flush arrow markers.
+- **Adaptive Port Selection**: Smart side selection (Left/Right) based on spatial facing orientation and canvas obstacle density.
+- **Multi-Lane Concentric Corridors**: Automatic channel allocation (`lane_offset = i * 14px`) to prevent parallel relationships from overlapping.
+- **Multi-Inbound Port Balancing**: Intelligent inbound port distribution across opposing sides of target tables to eliminate T-junction collisions on primary key fields.
+- **Multi-Touch Pinch-to-Zoom**: Fluid two-finger pinch-to-zoom and two-finger panning for mobile and tablet devices.
+- **MkDocs Material Dynamic Dark Theme**: Real-time palette sync supporting `[data-md-color-scheme="slate"]`, `[data-theme="dark"]`, and `.dark` classes without page reloads.
 
 ### Changed
-
-- N/A (initial stable release)
+- **Performance**: Instant $O(1)$ Bézier evaluation in `dbml.js` providing silky smooth 60 FPS interactive drag-and-drop animation.
+- **Toolbar UI**: Unified 36x36px action buttons with rounded corners, translucent backdrop, accessible focus rings, and responsive mobile legend layout.
+- **Collision Checking**: Strict table interior collision detection preventing connection lines from slicing through table cards or entering through top/bottom borders.
 
 ### Fixed
-
-- N/A
+- Fixed global SVG text selector bleeding into parent theme document text.
+- Fixed mobile legend clipping and overflow on narrow viewports.
+- Fixed drag flickering and jitter by introducing hysteresis stability buffers.
 
 ## [1.0.7] - 2026-02-27
 
@@ -75,5 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Export: markers (arrows, circles) no longer overwritten; larger stroke for visibility
 - Export: dark theme background in downloaded SVG/PNG
 
+[1.1.0]: https://github.com/ZhuchkaTriplesix/mkdocs-dbml/releases/tag/v1.1.0
+[1.0.7]: https://github.com/ZhuchkaTriplesix/mkdocs-dbml/releases/tag/v1.0.7
 [1.0.0]: https://github.com/ZhuchkaTriplesix/mkdocs-dbml/releases/tag/v1.0.0
 [1.0.1]: https://github.com/ZhuchkaTriplesix/mkdocs-dbml/releases/tag/v1.0.1
