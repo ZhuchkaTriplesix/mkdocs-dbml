@@ -63,7 +63,29 @@ cdef list _route_one(double sx, double sy, double ex, double ey,
                 break
         return [(sx, sy), (mid_x, sy), (mid_x, ey), (ex, ey)]
 
-    mid_x = (sx + ex) / 2.0
+    # S-step for staggered diagonal tables with vertical clearance
+    cdef double fx = rects[skip1].x, fy = rects[skip1].y, fw = rects[skip1].w, fh = rects[skip1].h
+    cdef double tx = rects[skip2].x, ty = rects[skip2].y, tw = rects[skip2].w, th = rects[skip2].h
+    cdef bint vert_clearance = (fy + fh + 15.0 <= ty) or (ty + th + 15.0 <= fy)
+    cdef double mid_y, stub
+
+    if sf == 'right' and st == 'left' and sx >= ex and vert_clearance:
+        mid_y = (fy + fh + ty) * 0.5 if (fy + fh <= ty) else (ty + th + fy) * 0.5
+        stub = 24.0
+        return [
+            (sx, sy), (sx + stub, sy), (sx + stub, mid_y),
+            (ex - stub, mid_y), (ex - stub, ey), (ex, ey)
+        ]
+
+    if sf == 'left' and st == 'right' and sx <= ex and vert_clearance:
+        mid_y = (fy + fh + ty) * 0.5 if (fy + fh <= ty) else (ty + th + fy) * 0.5
+        stub = 24.0
+        return [
+            (sx, sy), (sx - stub, sy), (sx - stub, mid_y),
+            (ex + stub, mid_y), (ex + stub, ey), (ex, ey)
+        ]
+
+    mid_x = (sx + ex) * 0.5
 
     blocker = _overlaps_v(mid_x, y_lo, y_hi, rects, n, skip1, skip2)
     if blocker < 0:
@@ -104,14 +126,19 @@ def route_connection(from_rect, to_rect, field_y_from, field_y_to,
         return [(0, 0), (0, 0)], 'right', 'left'
 
     cdef int i
+    cdef double avg_cx = 0.0
     for i in range(n):
         rects[i].x = table_rects[i][0]
         rects[i].y = table_rects[i][1]
         rects[i].w = table_rects[i][2]
         rects[i].h = table_rects[i][3]
+        avg_cx += rects[i].x + rects[i].w * 0.5
+    if n > 0:
+        avg_cx /= n
 
     cdef double fx = from_rect[0], fy = from_rect[1], fw = from_rect[2], fh = from_rect[3]
     cdef double tx = to_rect[0], ty = to_rect[1], tw = to_rect[2], th = to_rect[3]
+    cdef double from_cx = fx + fw * 0.5
     cdef double sx, ex, cost, best_cost
     cdef list wp, best_wp
     cdef str best_sf, best_st
@@ -142,8 +169,14 @@ def route_connection(from_rect, to_rect, field_y_from, field_y_to,
                         cost += 100000
                         break
 
-            if backwards:
-                cost += 50000.0
+            if backwards and len(wp) == 4:
+                cost += 50000
+
+            if sf == st:
+                if sf == 'right' and from_cx > avg_cx:
+                    cost += 10.0
+                elif sf == 'left' and from_cx <= avg_cx:
+                    cost += 10.0
 
             if cost < best_cost:
                 best_cost = cost
