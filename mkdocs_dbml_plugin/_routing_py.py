@@ -39,6 +39,7 @@ def _seg_hits_any_py(x1, y1, x2, y2, rects, n, skip1, skip2):
 
 
 def _path_hits_py(pts, rects, n_rects, skip1, skip2):
+    # 1. Check third-party tables
     for s in range(len(pts) - 1):
         hit = _seg_hits_any_py(
             pts[s][0],
@@ -52,6 +53,46 @@ def _path_hits_py(pts, rects, n_rects, skip1, skip2):
         )
         if hit >= 0:
             return hit
+
+    # 2. Check from_table and to_table interiors
+    pad = 2.0
+    for s in range(len(pts) - 1):
+        x1, y1 = pts[s]
+        x2, y2 = pts[s + 1]
+        lo_x, hi_x = min(x1, x2), max(x1, x2)
+        lo_y, hi_y = min(y1, y2), max(y1, y2)
+
+        # Vertical segment
+        if abs(x1 - x2) < 1e-3:
+            vx = x1
+            for skip_idx in (skip1, skip2):
+                if skip_idx < 0 or skip_idx >= n_rects:
+                    continue
+                rx, ry, rw, rh = rects[skip_idx]
+                if rx + pad < vx < rx + rw - pad:
+                    if lo_y < ry + rh - pad and hi_y > ry + pad:
+                        return skip_idx
+        # Horizontal segment
+        elif abs(y1 - y2) < 1e-3:
+            hy = y1
+            for skip_idx in (skip1, skip2):
+                if skip_idx < 0 or skip_idx >= n_rects:
+                    continue
+                rx, ry, rw, rh = rects[skip_idx]
+                if ry + pad < hy < ry + rh - pad:
+                    if s > 0 and s < len(pts) - 2:
+                        if lo_x < rx + rw - pad and hi_x > rx + pad:
+                            return skip_idx
+                    elif s == 0 and skip_idx == skip1:
+                        if (x1 >= rx + rw - pad and x2 < rx + rw - pad) or (
+                            x1 <= rx + pad and x2 > rx + pad
+                        ):
+                            return skip_idx
+                    elif s == len(pts) - 2 and skip_idx == skip2:
+                        if (x2 >= rx + rw - pad and x1 < rx + rw - pad) or (
+                            x2 <= rx + pad and x1 > rx + pad
+                        ):
+                            return skip_idx
     return -1
 
 
@@ -304,6 +345,7 @@ if np is not None:
     @njit(cache=True)
     def _path_hits(pts, n_pts, rects, n_rects, skip1, skip2):
         """Check if any segment of the polyline hits a table."""
+        # 1. Check third-party tables
         for s in range(n_pts - 1):
             hit = _seg_hits_any(
                 pts[s, 0],
@@ -317,6 +359,56 @@ if np is not None:
             )
             if hit >= 0:
                 return hit
+
+        # 2. Check from_table and to_table interiors
+        pad = 2.0
+        for s in range(n_pts - 1):
+            x1 = pts[s, 0]
+            y1 = pts[s, 1]
+            x2 = pts[s + 1, 0]
+            y2 = pts[s + 1, 1]
+            lo_x = min(x1, x2)
+            hi_x = max(x1, x2)
+            lo_y = min(y1, y2)
+            hi_y = max(y1, y2)
+
+            # Vertical segment
+            if abs(x1 - x2) < 1e-3:
+                vx = x1
+                for skip_idx in (skip1, skip2):
+                    if skip_idx < 0 or skip_idx >= n_rects:
+                        continue
+                    rx = rects[skip_idx, 0]
+                    ry = rects[skip_idx, 1]
+                    rw = rects[skip_idx, 2]
+                    rh = rects[skip_idx, 3]
+                    if rx + pad < vx < rx + rw - pad:
+                        if lo_y < ry + rh - pad and hi_y > ry + pad:
+                            return skip_idx
+            # Horizontal segment
+            elif abs(y1 - y2) < 1e-3:
+                hy = y1
+                for skip_idx in (skip1, skip2):
+                    if skip_idx < 0 or skip_idx >= n_rects:
+                        continue
+                    rx = rects[skip_idx, 0]
+                    ry = rects[skip_idx, 1]
+                    rw = rects[skip_idx, 2]
+                    rh = rects[skip_idx, 3]
+                    if ry + pad < hy < ry + rh - pad:
+                        if s > 0 and s < n_pts - 2:
+                            if lo_x < rx + rw - pad and hi_x > rx + pad:
+                                return skip_idx
+                        elif s == 0 and skip_idx == skip1:
+                            if (x1 >= rx + rw - pad and x2 < rx + rw - pad) or (
+                                x1 <= rx + pad and x2 > rx + pad
+                            ):
+                                return skip_idx
+                        elif s == n_pts - 2 and skip_idx == skip2:
+                            if (x2 >= rx + rw - pad and x1 < rx + rw - pad) or (
+                                x2 <= rx + pad and x1 > rx + pad
+                            ):
+                                return skip_idx
         return -1
 
     @njit(cache=True)
