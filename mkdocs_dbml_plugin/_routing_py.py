@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 """
-High-performance orthogonal edge routing with Numba JIT / NumPy.
+High-performance edge routing with Numba JIT / NumPy.
 Falls back to pure Python if Numba / NumPy is unavailable.
 """
 

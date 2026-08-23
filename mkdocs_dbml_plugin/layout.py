@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Dict, Set
 
 from .config import HEADER_HEIGHT, ROW_HEIGHT, TABLE_BOTTOM_PADDING
