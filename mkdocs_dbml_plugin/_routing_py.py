@@ -182,6 +182,7 @@ def _route_connection_py(
     table_rects,
     gap=48.0,
     lane_offset=0.0,
+    preferred_side_to=None,
 ):
     fx, fy, fw, fh = from_rect
     tx, ty, tw, th = to_rect
@@ -232,6 +233,19 @@ def _route_connection_py(
             cost += 100000.0
         if backwards and len(pts) == 4:
             cost += 50000.0
+
+        # Narrow gap penalty: do not squeeze vertical lines into narrow spaces between tables
+        if sf == "right" and st == "left" and 0.0 <= ex - sx < 48.0:
+            cost += 300.0
+        elif sf == "left" and st == "right" and 0.0 <= sx - ex < 48.0:
+            cost += 300.0
+
+        # Inbound target field side balancing
+        if preferred_side_to:
+            if st == preferred_side_to:
+                cost -= 250.0
+            else:
+                cost += 250.0
 
         # Balanced side load / corridor congestion bonus for same-side connections
         if sf == st:
@@ -503,6 +517,7 @@ if np is not None:
         n,
         gap,
         lane_offset,
+        pref_st=-1,
     ):
         """Try all 4 side combos, return best waypoints + side indices."""
         buf = np.empty((6, 2), dtype=np.float64)
@@ -557,6 +572,19 @@ if np is not None:
                 if backwards and n_pts == 4:
                     cost += 50000.0
 
+                # Narrow gap penalty
+                if sf == 0 and st == 0 and 0.0 <= ex - sx < 48.0:
+                    cost += 300.0
+                elif sf == 1 and st == 1 and 0.0 <= sx - ex < 48.0:
+                    cost += 300.0
+
+                # Inbound preferred side
+                if pref_st >= 0:
+                    if st == pref_st:
+                        cost -= 250.0
+                    else:
+                        cost += 250.0
+
                 # Same-side load balance
                 if (sf == 0 and st == 1):  # R-R
                     if from_cx > avg_cx:
@@ -586,6 +614,7 @@ if np is not None:
         table_rects,
         gap=48.0,
         lane_offset=0.0,
+        preferred_side_to=None,
     ):
         fx, fy, fw, fh = from_rect
         tx, ty, tw, th = to_rect
@@ -596,6 +625,12 @@ if np is not None:
             if isinstance(table_rects, np.ndarray)
             else np.array(table_rects, dtype=np.float64)
         )
+
+        pref_st = -1
+        if preferred_side_to == "left":
+            pref_st = 0
+        elif preferred_side_to == "right":
+            pref_st = 1
 
         best_buf, n_pts, best_sf, best_st = _find_best(
             float(fx),
@@ -614,6 +649,7 @@ if np is not None:
             n,
             float(gap),
             float(lane_offset),
+            pref_st,
         )
 
         pts = [(best_buf[i, 0], best_buf[i, 1]) for i in range(n_pts)]

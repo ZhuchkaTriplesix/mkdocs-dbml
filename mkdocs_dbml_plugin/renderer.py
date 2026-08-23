@@ -224,19 +224,33 @@ class DbmlRenderer:
         if parsed.refs:
             svg_parts.append('<g class="dbml-relationships-layer">')
             pair_counts: dict[tuple[int, int], int] = {}
+            target_field_sides: dict[tuple[str, str], str] = {}
             for ref in parsed.refs:
                 col1 = ref.col1[0] if ref.col1 else None
                 col2 = ref.col2[0] if ref.col2 else None
+                pref_side = None
+                target_key = None
                 if col1 and col2:
                     t1_idx = self._table_idx.get(col1.table.name, -1)
                     t2_idx = self._table_idx.get(col2.table.name, -1)
                     pair_key = (min(t1_idx, t2_idx), max(t1_idx, t2_idx))
                     lane_idx = pair_counts.get(pair_key, 0)
                     pair_counts[pair_key] = lane_idx + 1
+
+                    target_key = (col2.table.name, col2.name)
+                    if target_key in target_field_sides:
+                        prev_side = target_field_sides[target_key]
+                        pref_side = "right" if prev_side == "left" else "left"
                 else:
                     lane_idx = 0
                 lane_offset = lane_idx * 14.0
-                svg_parts.append(self._render_relationship_line(ref, lane_offset=lane_offset))
+                rel_svg, side_to = self._render_relationship_line(
+                    ref, lane_offset=lane_offset, preferred_side_to=pref_side
+                )
+                if target_key and side_to:
+                    target_field_sides[target_key] = side_to
+                if rel_svg:
+                    svg_parts.append(rel_svg)
             svg_parts.append("</g>")
 
         svg_parts.append('<g class="dbml-tables-layer">')
@@ -445,12 +459,17 @@ class DbmlRenderer:
 
         return "".join(svg)
 
-    def _render_relationship_line(self, ref, lane_offset: float = 0.0) -> str:
+    def _render_relationship_line(
+        self,
+        ref,
+        lane_offset: float = 0.0,
+        preferred_side_to: str | None = None,
+    ) -> tuple[str, str]:
         col1 = ref.col1[0] if ref.col1 else None
         col2 = ref.col2[0] if ref.col2 else None
 
         if not col1 or not col2:
-            return ""
+            return "", ""
 
         table1_name = col1.table.name
         table2_name = col2.table.name
@@ -461,12 +480,12 @@ class DbmlRenderer:
             table1_name not in self.field_positions
             or table2_name not in self.field_positions
         ):
-            return ""
+            return "", ""
         if (
             field1_name not in self.field_positions[table1_name]
             or field2_name not in self.field_positions[table2_name]
         ):
-            return ""
+            return "", ""
 
         _, y1_field = self.field_positions[table1_name][field1_name]
         _, y2_field = self.field_positions[table2_name][field2_name]
@@ -487,6 +506,7 @@ class DbmlRenderer:
             getattr(self, "_table_rects_np", self._table_rects),
             gap=CONN_GAP,
             lane_offset=lane_offset,
+            preferred_side_to=preferred_side_to,
         )
 
         parts = [f"M {waypoints[0][0]} {waypoints[0][1]}"]
@@ -527,7 +547,7 @@ class DbmlRenderer:
         svg.append('class="dbml-relationship-line" opacity="0.7"/>')
         svg.append("</g>")
 
-        return "".join(svg)
+        return "".join(svg), side_to
 
     def _escape_html(self, text: str) -> str:
         return (
