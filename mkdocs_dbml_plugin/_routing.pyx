@@ -33,32 +33,32 @@ cdef double _path_cost(list waypoints):
 
 
 cdef list _route_one(double sx, double sy, double ex, double ey,
-                     int skip1, int skip2, Rect *rects, int n, double gap,
-                     str sf, str st):
+                      int skip1, int skip2, Rect *rects, int n, double gap,
+                      str sf='right', str st='left', double lane_offset=0.0):
     cdef double y_lo = sy if sy < ey else ey
-    cdef double y_hi = sy if sy > ey else ey
-    cdef int blocker, dummy, i
-    cdef double left_x, right_x, jog_y, safe_x, stub, mid_x
+    cdef double y_hi = ey if sy < ey else sy
+    cdef double mid_x, left_x, right_x, safe_x, jog_y, stub
+    cdef int blocker, i
     cdef bint left_ok, right_ok
 
     if sf == 'right' and st == 'right':
-        mid_x = (sx if sx > ex else ex) + gap
+        mid_x = (sx if sx > ex else ex) + gap + lane_offset
         for i in range(n):
             blocker = _overlaps_v(mid_x, y_lo, y_hi, rects, n, skip1, skip2)
             if blocker >= 0:
-                if rects[blocker].x + rects[blocker].w + gap > mid_x:
-                    mid_x = rects[blocker].x + rects[blocker].w + gap
+                if rects[blocker].x + rects[blocker].w + gap + lane_offset > mid_x:
+                    mid_x = rects[blocker].x + rects[blocker].w + gap + lane_offset
             else:
                 break
         return [(sx, sy), (mid_x, sy), (mid_x, ey), (ex, ey)]
 
     if sf == 'left' and st == 'left':
-        mid_x = (sx if sx < ex else ex) - gap
+        mid_x = (sx if sx < ex else ex) - (gap + lane_offset)
         for i in range(n):
             blocker = _overlaps_v(mid_x, y_lo, y_hi, rects, n, skip1, skip2)
             if blocker >= 0:
-                if rects[blocker].x - gap < mid_x:
-                    mid_x = rects[blocker].x - gap
+                if rects[blocker].x - (gap + lane_offset) < mid_x:
+                    mid_x = rects[blocker].x - (gap + lane_offset)
             else:
                 break
         return [(sx, sy), (mid_x, sy), (mid_x, ey), (ex, ey)]
@@ -67,10 +67,10 @@ cdef list _route_one(double sx, double sy, double ex, double ey,
     cdef double fx = rects[skip1].x, fy = rects[skip1].y, fw = rects[skip1].w, fh = rects[skip1].h
     cdef double tx = rects[skip2].x, ty = rects[skip2].y, tw = rects[skip2].w, th = rects[skip2].h
     cdef bint vert_clearance = (fy + fh + 15.0 <= ty) or (ty + th + 15.0 <= fy)
-    cdef double mid_y, stub
+    cdef double mid_y
 
     if sf == 'right' and st == 'left' and sx >= ex and vert_clearance:
-        mid_y = (fy + fh + ty) * 0.5 if (fy + fh <= ty) else (ty + th + fy) * 0.5
+        mid_y = (fy + fh + ty) * 0.5 + lane_offset * 0.5 if (fy + fh <= ty) else (ty + th + fy) * 0.5 + lane_offset * 0.5
         stub = 24.0
         return [
             (sx, sy), (sx + stub, sy), (sx + stub, mid_y),
@@ -78,14 +78,14 @@ cdef list _route_one(double sx, double sy, double ex, double ey,
         ]
 
     if sf == 'left' and st == 'right' and sx <= ex and vert_clearance:
-        mid_y = (fy + fh + ty) * 0.5 if (fy + fh <= ty) else (ty + th + fy) * 0.5
+        mid_y = (fy + fh + ty) * 0.5 - lane_offset * 0.5 if (fy + fh <= ty) else (ty + th + fy) * 0.5 - lane_offset * 0.5
         stub = 24.0
         return [
             (sx, sy), (sx - stub, sy), (sx - stub, mid_y),
             (ex + stub, mid_y), (ex + stub, ey), (ex, ey)
         ]
 
-    mid_x = (sx + ex) * 0.5
+    mid_x = (sx + ex) * 0.5 + (lane_offset * 0.5 if sf == 'right' else -lane_offset * 0.5)
 
     blocker = _overlaps_v(mid_x, y_lo, y_hi, rects, n, skip1, skip2)
     if blocker < 0:
@@ -119,7 +119,7 @@ cdef list _route_one(double sx, double sy, double ex, double ey,
 
 
 def route_connection(from_rect, to_rect, field_y_from, field_y_to,
-                     from_idx, to_idx, table_rects, gap=48.0):
+                     from_idx, to_idx, table_rects, gap=48.0, lane_offset=0.0):
     cdef int n = len(table_rects)
     cdef Rect *rects = <Rect *>malloc(n * sizeof(Rect))
     if rects == NULL:
@@ -157,7 +157,7 @@ def route_connection(from_rect, to_rect, field_y_from, field_y_to,
             backwards = (sf == 'right' and st == 'left' and sx >= ex) or (sf == 'left' and st == 'right' and sx <= ex)
 
             wp = _route_one(sx, field_y_from, ex, field_y_to,
-                            from_idx, to_idx, rects, n, gap, sf, st)
+                            from_idx, to_idx, rects, n, gap, sf, st, lane_offset)
             cost = _path_cost(wp)
 
             for j in range(1, len(wp) - 1):

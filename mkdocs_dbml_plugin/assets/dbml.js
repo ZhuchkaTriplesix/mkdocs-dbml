@@ -315,10 +315,12 @@ D.addEventListener('DOMContentLoaded', function() {
         var C_tt = new Array(CN);
         var C_sy = new Float64Array(CN);
         var C_ey = new Float64Array(CN);
+        var C_lane = new Float64Array(CN);
         var C_last_j = new Int32Array(CN);
         for (var idx = 0; idx < CN; idx++) C_last_j[idx] = -1;
 
         var C_hit = new Array(CN);
+        var pairCounts = {};
         for (var i = 0; i < CN; i++) {
             var g = rg[i];
             var fa = g.getAttribute('data-from') || '';
@@ -338,6 +340,12 @@ D.addEventListener('DOMContentLoaded', function() {
             for (var j = 0; j < TN; j++) {
                 if (TA[j].n === fn) C_fi[i] = j;
                 if (TA[j].n === tn) C_ti[i] = j;
+            }
+            if (C_fi[i] >= 0 && C_ti[i] >= 0) {
+                var pKey = C_fi[i] < C_ti[i] ? C_fi[i] + '_' + C_ti[i] : C_ti[i] + '_' + C_fi[i];
+                var lIdx = pairCounts[pKey] || 0;
+                C_lane[i] = lIdx * 14.0;
+                pairCounts[pKey] = lIdx + 1;
             }
             var nums = visP.getAttribute('d').match(/-?[\d.]+/g);
             if (nums) {
@@ -528,29 +536,30 @@ D.addEventListener('DOMContentLoaded', function() {
                     var co = 0;
                     var is_step = false;
                     var my = 0;
+                    var lane = C_lane[i];
 
                     if (j === 1) { // R -> R
-                        mx = (sx > ex ? sx : ex) + 48;
+                        mx = (sx > ex ? sx : ex) + 48 + lane;
                         co = (mx - sx) + (mx - ex) + (sy > ey ? sy - ey : ey - sy);
                     } else if (j === 2) { // L -> L
-                        mx = (sx < ex ? sx : ex) - 48;
+                        mx = (sx < ex ? sx : ex) - (48 + lane);
                         co = (sx - mx) + (ex - mx) + (sy > ey ? sy - ey : ey - sy);
                     } else if (j === 0) { // R -> L
                         if (sx >= ex && vertClear) {
                             is_step = true;
-                            my = fB <= tT ? (fB + tT) * 0.5 : (tB + fT) * 0.5;
+                            my = (fB <= tT ? (fB + tT) * 0.5 : (tB + fT) * 0.5) + lane * 0.5;
                             co = 48 + Math.abs(sy - my) + Math.abs((sx + 24) - (ex - 24)) + Math.abs(my - ey);
                         } else {
-                            mx = (sx + ex) * 0.5;
+                            mx = (sx + ex) * 0.5 + lane * 0.5;
                             co = (sx > ex ? sx - ex + 50000 : ex - sx) + (sy > ey ? sy - ey : ey - sy);
                         }
                     } else { // L -> R
                         if (sx <= ex && vertClear) {
                             is_step = true;
-                            my = fB <= tT ? (fB + tT) * 0.5 : (tB + fT) * 0.5;
+                            my = (fB <= tT ? (fB + tT) * 0.5 : (tB + fT) * 0.5) - lane * 0.5;
                             co = 48 + Math.abs(sy - my) + Math.abs((sx - 24) - (ex + 24)) + Math.abs(my - ey);
                         } else {
-                            mx = (sx + ex) * 0.5;
+                            mx = (sx + ex) * 0.5 - lane * 0.5;
                             co = (sx < ex ? ex - sx + 50000 : sx - ex) + (sy > ey ? sy - ey : ey - sy);
                         }
                     }
