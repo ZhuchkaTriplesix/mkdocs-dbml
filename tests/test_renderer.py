@@ -157,24 +157,29 @@ def test_same_side_right_right_routing():
         assert wp[1][0] <= 300.0 - 48.0
 
 
-def test_diagonal_staggered_s_step_routing():
-    from mkdocs_dbml_plugin import _routing_py
+def test_smooth_bezier_s_curve_routing():
     from mkdocs_dbml_plugin.routing import route_connection
 
-    # Table 1 top-left, Table 2 bottom-right, with 30px horizontal overlap and vertical clearance
+    # Table 1 top-left, Table 2 bottom-right, horizontal facing layout
     from_rect = (100.0, 50.0, 200.0, 100.0)   # right = 300, bottom = 150
-    to_rect = (270.0, 250.0, 200.0, 100.0)     # left = 270, top = 250 (overlap = 30px, vert clearance = 100px)
+    to_rect = (400.0, 250.0, 200.0, 100.0)     # left = 400, top = 250
     table_rects = [from_rect, to_rect]
 
     wp, sf, st = route_connection(
         from_rect, to_rect, 90.0, 290.0, 0, 1, table_rects, gap=48.0
     )
-    # Natural S-step connection (sf="right", st="left")
+    # Natural S-curve Bézier connection (sf="right", st="left")
     assert sf == "right"
     assert st == "left"
-    assert len(wp) == 6
-    # Vertical transition occurs in the inter-table vertical corridor (between y=150 and y=250)
-    assert 150.0 <= wp[2][1] <= 250.0
+    assert len(wp) == 4
+    # Horizontal control points provide smooth tangent transitions
+    sx, sy = wp[0]
+    cp1x, cp1y = wp[1]
+    cp2x, cp2y = wp[2]
+    ex, ey = wp[3]
+    assert sx == 300.0 and ex == 400.0
+    assert cp1y == sy and cp2y == ey
+    assert cp1x > sx and cp2x < ex
 
 
 def test_parallel_connections_multi_lane_offsets():
@@ -193,10 +198,10 @@ def test_parallel_connections_multi_lane_offsets():
 
     assert sf1 == sf2
     assert st1 == st2
-    # Verify that the two parallel vertical corridors are separated by the lane offset
-    mid_x1 = wp1[1][0]
-    mid_x2 = wp2[1][0]
-    assert abs(abs(mid_x2 - mid_x1) - 14.0) < 1e-5
+    # Verify that the two parallel Bézier control points are separated by the lane offset
+    cp1_x1 = wp1[1][0]
+    cp1_x2 = wp2[1][0]
+    assert abs(abs(cp1_x2 - cp1_x1) - 14.0) < 1e-5
 
 
 def test_narrow_gap_penalty_routes_around_perimeter():

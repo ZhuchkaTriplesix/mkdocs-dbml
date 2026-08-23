@@ -509,10 +509,17 @@ class DbmlRenderer:
             preferred_side_to=preferred_side_to,
         )
 
-        parts = [f"M {waypoints[0][0]} {waypoints[0][1]}"]
-        for wx, wy in waypoints[1:]:
-            parts.append(f"L {wx} {wy}")
-        path = " ".join(parts)
+        if len(waypoints) == 4:
+            sx, sy = waypoints[0]
+            cp1x, cp1y = waypoints[1]
+            cp2x, cp2y = waypoints[2]
+            ex, ey = waypoints[3]
+            path = f"M {sx} {sy} C {cp1x} {cp1y}, {cp2x} {cp2y}, {ex} {ey}"
+        else:
+            parts = [f"M {waypoints[0][0]} {waypoints[0][1]}"]
+            for wx, wy in waypoints[1:]:
+                parts.append(f"L {wx} {wy}")
+            path = " ".join(parts)
 
         marker_start = ""
         marker_end = ""

@@ -656,22 +656,28 @@ D.addEventListener('DOMContentLoaded', function() {
 
                 C_last_j[i] = best_j;
 
-                var nd = '';
-                if (b_is_step) {
-                    var s_out = best_j === 0 ? bs + 24 : bs - 24;
-                    var s_in = best_j === 0 ? be - 24 : be + 24;
-                    nd = 'M ' + bs + ' ' + sy +
-                        ' L ' + s_out + ' ' + sy +
-                        ' L ' + s_out + ' ' + b_my +
-                        ' L ' + s_in + ' ' + b_my +
-                        ' L ' + s_in + ' ' + ey +
-                        ' L ' + be + ' ' + ey;
-                } else {
-                    nd = 'M ' + bs + ' ' + sy +
-                        ' L ' + bm + ' ' + sy +
-                        ' L ' + bm + ' ' + ey +
-                        ' L ' + be + ' ' + ey;
+                var lane = C_lane[i];
+                var cp1x, cp2x, cp1y = sy, cp2y = ey;
+
+                if (best_j === 0) { // R -> L
+                    var dx = Math.max(48, Math.abs(be - bs) * 0.5) + lane * 0.5;
+                    cp1x = bs + dx;
+                    cp2x = be - dx;
+                } else if (best_j === 3) { // L -> R
+                    var dx = Math.max(48, Math.abs(bs - be) * 0.5) + lane * 0.5;
+                    cp1x = bs - dx;
+                    cp2x = be + dx;
+                } else if (best_j === 1) { // R -> R
+                    var dx = 48 + Math.abs(ey - sy) * 0.25 + lane;
+                    cp1x = Math.max(bs, be) + dx;
+                    cp2x = Math.max(bs, be) + dx;
+                } else { // L -> L
+                    var dx = 48 + Math.abs(ey - sy) * 0.25 + lane;
+                    cp1x = Math.min(bs, be) - dx;
+                    cp2x = Math.min(bs, be) - dx;
                 }
+
+                var nd = 'M ' + bs + ' ' + sy + ' C ' + cp1x + ' ' + cp1y + ', ' + cp2x + ' ' + cp2y + ', ' + be + ' ' + ey;
                 C_path[i].setAttribute('d', nd);
                 if (C_hit[i]) C_hit[i].setAttribute('d', nd);
             }

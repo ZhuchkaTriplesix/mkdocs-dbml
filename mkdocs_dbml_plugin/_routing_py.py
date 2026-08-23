@@ -314,11 +314,33 @@ def _route_connection_py(
 
         if cost < best_cost:
             best_cost = cost
-            best_wp = pts
             best_sf = sf
             best_st = st
 
-    return best_wp, best_sf, best_st
+    sx = fx + fw if best_sf == "right" else fx
+    ex = tx if best_st == "left" else tx + tw
+    sy = field_y_from
+    ey = field_y_to
+
+    if best_sf == "right" and best_st == "left":
+        dx = max(48.0, abs(ex - sx) * 0.5) + lane_offset * 0.5
+        cp1 = (sx + dx, sy)
+        cp2 = (ex - dx, ey)
+    elif best_sf == "left" and best_st == "right":
+        dx = max(48.0, abs(sx - ex) * 0.5) + lane_offset * 0.5
+        cp1 = (sx - dx, sy)
+        cp2 = (ex + dx, ey)
+    elif best_sf == "right" and best_st == "right":
+        dx = 48.0 + abs(ey - sy) * 0.25 + lane_offset
+        cp1 = (max(sx, ex) + dx, sy)
+        cp2 = (max(sx, ex) + dx, ey)
+    else:  # left to left
+        dx = 48.0 + abs(ey - sy) * 0.25 + lane_offset
+        cp1 = (min(sx, ex) - dx, sy)
+        cp2 = (min(sx, ex) - dx, ey)
+
+    bezier_wp = [(sx, sy), cp1, cp2, (ex, ey)]
+    return bezier_wp, best_sf, best_st
 
 
 if np is not None:
@@ -744,10 +766,33 @@ if np is not None:
             pref_st,
         )
 
-        pts = [(best_buf[i, 0], best_buf[i, 1]) for i in range(n_pts)]
         sf_str = "right" if best_sf == 0 else "left"
         st_str = "left" if best_st == 0 else "right"
-        return pts, sf_str, st_str
+
+        sx = fx + fw if sf_str == "right" else fx
+        ex = tx if st_str == "left" else tx + tw
+        sy = field_y_from
+        ey = field_y_to
+
+        if sf_str == "right" and st_str == "left":
+            dx = max(48.0, abs(ex - sx) * 0.5) + lane_offset * 0.5
+            cp1 = (sx + dx, sy)
+            cp2 = (ex - dx, ey)
+        elif sf_str == "left" and st_str == "right":
+            dx = max(48.0, abs(sx - ex) * 0.5) + lane_offset * 0.5
+            cp1 = (sx - dx, sy)
+            cp2 = (ex + dx, ey)
+        elif sf_str == "right" and st_str == "right":
+            dx = 48.0 + abs(ey - sy) * 0.25 + lane_offset
+            cp1 = (max(sx, ex) + dx, sy)
+            cp2 = (max(sx, ex) + dx, ey)
+        else:  # left to left
+            dx = 48.0 + abs(ey - sy) * 0.25 + lane_offset
+            cp1 = (min(sx, ex) - dx, sy)
+            cp2 = (min(sx, ex) - dx, ey)
+
+        bezier_wp = [(sx, sy), cp1, cp2, (ex, ey)]
+        return bezier_wp, sf_str, st_str
 
     route_connection = _route_connection_np
 else:
