@@ -316,11 +316,16 @@ D.addEventListener('DOMContentLoaded', function() {
         var C_sy = new Float64Array(CN);
         var C_ey = new Float64Array(CN);
         var C_lane = new Float64Array(CN);
+        var C_pref_st = new Int32Array(CN);
         var C_last_j = new Int32Array(CN);
-        for (var idx = 0; idx < CN; idx++) C_last_j[idx] = -1;
+        for (var idx = 0; idx < CN; idx++) {
+            C_last_j[idx] = -1;
+            C_pref_st[idx] = -1;
+        }
 
         var C_hit = new Array(CN);
         var pairCounts = {};
+        var targetFieldSides = {};
         for (var i = 0; i < CN; i++) {
             var g = rg[i];
             var fa = g.getAttribute('data-from') || '';
@@ -346,11 +351,20 @@ D.addEventListener('DOMContentLoaded', function() {
                 var lIdx = pairCounts[pKey] || 0;
                 C_lane[i] = lIdx * 14.0;
                 pairCounts[pKey] = lIdx + 1;
+
+                if (ta in targetFieldSides) {
+                    C_pref_st[i] = targetFieldSides[ta] === 0 ? 1 : 0;
+                }
             }
             var nums = visP.getAttribute('d').match(/-?[\d.]+/g);
             if (nums) {
                 C_sy[i] = +nums[1];
                 C_ey[i] = +nums[nums.length - 1];
+                var exInit = +nums[nums.length - 2];
+                if (C_ti[i] >= 0 && !(ta in targetFieldSides)) {
+                    var tInit = TA[C_ti[i]];
+                    targetFieldSides[ta] = Math.abs(exInit - tInit.ox) < Math.abs(exInit - (tInit.ox + tInit.ow)) ? 0 : 1;
+                }
             }
         }
 
@@ -561,6 +575,24 @@ D.addEventListener('DOMContentLoaded', function() {
                         } else {
                             mx = (sx + ex) * 0.5 - lane * 0.5;
                             co = (sx < ex ? ex - sx + 50000 : sx - ex) + (sy > ey ? sy - ey : ey - sy);
+                        }
+                    }
+
+                    // Narrow gap penalty
+                    if (j === 0 && (ex - sx) >= 0 && (ex - sx) < 48) {
+                        co += 300;
+                    } else if (j === 3 && (sx - ex) >= 0 && (sx - ex) < 48) {
+                        co += 300;
+                    }
+
+                    // Inbound preferred side
+                    if (C_pref_st[i] >= 0) {
+                        var isStRight = (j === 1 || j === 3);
+                        var wantRight = (C_pref_st[i] === 1);
+                        if (isStRight === wantRight) {
+                            co -= 250;
+                        } else {
+                            co += 250;
                         }
                     }
 

@@ -119,7 +119,8 @@ cdef list _route_one(double sx, double sy, double ex, double ey,
 
 
 def route_connection(from_rect, to_rect, field_y_from, field_y_to,
-                     from_idx, to_idx, table_rects, gap=48.0, lane_offset=0.0):
+                     from_idx, to_idx, table_rects, gap=48.0, lane_offset=0.0,
+                     preferred_side_to=None):
     cdef int n = len(table_rects)
     cdef Rect *rects = <Rect *>malloc(n * sizeof(Rect))
     if rects == NULL:
@@ -171,6 +172,19 @@ def route_connection(from_rect, to_rect, field_y_from, field_y_to,
 
             if backwards and len(wp) == 4:
                 cost += 50000
+
+            # Narrow gap penalty
+            if sf == 'right' and st == 'left' and 0.0 <= ex - sx < 48.0:
+                cost += 300.0
+            elif sf == 'left' and st == 'right' and 0.0 <= sx - ex < 48.0:
+                cost += 300.0
+
+            # Preferred inbound side
+            if preferred_side_to is not None:
+                if st == preferred_side_to:
+                    cost -= 250.0
+                else:
+                    cost += 250.0
 
             if sf == st:
                 if sf == 'right' and from_cx > avg_cx:

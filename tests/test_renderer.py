@@ -199,6 +199,41 @@ def test_parallel_connections_multi_lane_offsets():
     assert abs(abs(mid_x2 - mid_x1) - 14.0) < 1e-5
 
 
+def test_narrow_gap_penalty_routes_around_perimeter():
+    from mkdocs_dbml_plugin.routing import route_connection
+
+    # Table 1 at left, Table 2 at right with only 20px gap (narrow gap < 48px)
+    from_rect = (100.0, 200.0, 150.0, 100.0)  # right = 250
+    to_rect = (270.0, 50.0, 150.0, 100.0)     # left = 270 (gap is only 20px)
+    table_rects = [from_rect, to_rect]
+
+    wp, sf, st = route_connection(
+        from_rect, to_rect, 250.0, 80.0, 0, 1, table_rects, gap=48.0
+    )
+    # Because gap is < 48px, router avoids the narrow 20px space between tables
+    # and routes around the outer perimeter (e.g. L-L or R-R)
+    assert sf == st or (sf == "left" or st == "right")
+
+
+def test_multi_inbound_preferred_side_balancing():
+    from mkdocs_dbml_plugin.routing import route_connection
+
+    from_rect = (100.0, 100.0, 150.0, 100.0)
+    to_rect = (400.0, 100.0, 150.0, 100.0)
+    table_rects = [from_rect, to_rect]
+
+    wp1, sf1, st1 = route_connection(
+        from_rect, to_rect, 150.0, 150.0, 0, 1, table_rects, gap=48.0, preferred_side_to="left"
+    )
+    assert st1 == "left"
+
+    wp2, sf2, st2 = route_connection(
+        from_rect, to_rect, 150.0, 150.0, 0, 1, table_rects, gap=48.0, preferred_side_to="right"
+    )
+    assert st2 == "right"
+
+
+
 
 
 
