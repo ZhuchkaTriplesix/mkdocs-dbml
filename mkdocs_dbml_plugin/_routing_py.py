@@ -62,10 +62,33 @@ def _path_cost_py(pts):
     return cost
 
 
-def _route_one_py(sx, sy, ex, ey, skip1, skip2, rects, n, gap):
-    mid_x = (sx + ex) * 0.5
+def _route_one_py(sx, sy, ex, ey, skip1, skip2, rects, n, gap, sf="right", st="left"):
     y_lo = min(sy, ey)
     y_hi = max(sy, ey)
+
+    if sf == "right" and st == "right":
+        mid_x = max(sx, ex) + gap
+        for _ in range(n):
+            blocker = _seg_hits_any_py(mid_x, y_lo, mid_x, y_hi, rects, n, skip1, skip2)
+            if blocker >= 0:
+                bx, by, bw, bh = rects[blocker]
+                mid_x = max(mid_x, bx + bw + gap)
+            else:
+                break
+        return [(sx, sy), (mid_x, sy), (mid_x, ey), (ex, ey)]
+
+    if sf == "left" and st == "left":
+        mid_x = min(sx, ex) - gap
+        for _ in range(n):
+            blocker = _seg_hits_any_py(mid_x, y_lo, mid_x, y_hi, rects, n, skip1, skip2)
+            if blocker >= 0:
+                bx, by, bw, bh = rects[blocker]
+                mid_x = min(mid_x, bx - gap)
+            else:
+                break
+        return [(sx, sy), (mid_x, sy), (mid_x, ey), (ex, ey)]
+
+    mid_x = (sx + ex) * 0.5
 
     blocker = _seg_hits_any_py(mid_x, y_lo, mid_x, y_hi, rects, n, skip1, skip2)
     if blocker < 0:
@@ -128,6 +151,10 @@ def _route_connection_py(
             sx = fx + fw + 12.0 if sf_idx == 0 else fx - 12.0
             ex = tx - 12.0 if st_idx == 0 else tx + tw + 12.0
 
+            backwards = (sf == "right" and st == "left" and sx >= ex) or (
+                sf == "left" and st == "right" and sx <= ex
+            )
+
             pts = _route_one_py(
                 sx,
                 field_y_from,
@@ -138,11 +165,15 @@ def _route_connection_py(
                 table_rects,
                 n,
                 gap,
+                sf=sf,
+                st=st,
             )
             hit = _path_hits_py(pts, table_rects, n, from_idx, to_idx)
             cost = _path_cost_py(pts)
             if hit >= 0:
                 cost += 100000.0
+            if backwards:
+                cost += 50000.0
 
             if cost < best_cost:
                 best_cost = cost
@@ -201,14 +232,54 @@ if np is not None:
         return cost
 
     @njit(cache=True)
-    def _route_one(sx, sy, ex, ey, skip1, skip2, rects, n, gap, out):
+    def _route_one(sx, sy, ex, ey, skip1, skip2, rects, n, gap, sf, st, out):
         """
         Build orthogonal polyline, write into out array.
         Returns number of waypoints written.
         """
-        mid_x = (sx + ex) * 0.5
         y_lo = min(sy, ey)
         y_hi = max(sy, ey)
+
+        if sf == 0 and st == 1:  # right to right
+            mid_x = max(sx, ex) + gap
+            for _ in range(n):
+                blocker = _seg_hits_any(mid_x, y_lo, mid_x, y_hi, rects, n, skip1, skip2)
+                if blocker >= 0:
+                    bx = rects[blocker, 0]
+                    bw = rects[blocker, 2]
+                    mid_x = max(mid_x, bx + bw + gap)
+                else:
+                    break
+            out[0, 0] = sx
+            out[0, 1] = sy
+            out[1, 0] = mid_x
+            out[1, 1] = sy
+            out[2, 0] = mid_x
+            out[2, 1] = ey
+            out[3, 0] = ex
+            out[3, 1] = ey
+            return 4
+
+        if sf == 1 and st == 0:  # left to left
+            mid_x = min(sx, ex) - gap
+            for _ in range(n):
+                blocker = _seg_hits_any(mid_x, y_lo, mid_x, y_hi, rects, n, skip1, skip2)
+                if blocker >= 0:
+                    bx = rects[blocker, 0]
+                    mid_x = min(mid_x, bx - gap)
+                else:
+                    break
+            out[0, 0] = sx
+            out[0, 1] = sy
+            out[1, 0] = mid_x
+            out[1, 1] = sy
+            out[2, 0] = mid_x
+            out[2, 1] = ey
+            out[3, 0] = ex
+            out[3, 1] = ey
+            return 4
+
+        mid_x = (sx + ex) * 0.5
 
         blocker = _seg_hits_any(mid_x, y_lo, mid_x, y_hi, rects, n, skip1, skip2)
         if blocker < 0:
@@ -314,14 +385,20 @@ if np is not None:
                 else:
                     ex = tx + tw + 12.0
 
+                backwards = (sf == 0 and st == 0 and sx >= ex) or (
+                    sf == 1 and st == 1 and sx <= ex
+                )
+
                 n_pts = _route_one(
-                    sx, field_y_from, ex, field_y_to, skip1, skip2, rects, n, gap, buf
+                    sx, field_y_from, ex, field_y_to, skip1, skip2, rects, n, gap, sf, st, buf
                 )
 
                 hit = _path_hits(buf, n_pts, rects, n, skip1, skip2)
                 cost = _path_cost(buf, n_pts)
                 if hit >= 0:
                     cost += 100000.0
+                if backwards:
+                    cost += 50000.0
 
                 if cost < best_cost:
                     best_cost = cost
