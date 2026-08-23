@@ -504,15 +504,36 @@ D.addEventListener('DOMContentLoaded', function() {
                 var tL = t.ox + t.dx, tR = tL + t.ow;
                 var sy = C_sy[i] + f.dy, ey = C_ey[i] + t.dy;
 
-                _sxA[0] = fR + 12; _sxA[1] = fR + 12; _sxA[2] = fL - 12; _sxA[3] = fL - 12;
-                _exA[0] = tL - 12; _exA[1] = tR + 12; _exA[2] = tL - 12; _exA[3] = tR + 12;
+                // 4 combinations:
+                // j=0: R -> L (fR -> tL)
+                // j=1: R -> R (fR -> tR)
+                // j=2: L -> L (fL -> tL)
+                // j=3: L -> R (fL -> tR)
+                _sxA[0] = fR + 12; _exA[0] = tL - 12;
+                _sxA[1] = fR + 12; _exA[1] = tR + 12;
+                _sxA[2] = fL - 12; _exA[2] = tL - 12;
+                _sxA[3] = fL - 12; _exA[3] = tR + 12;
 
                 var bc = 1e18, bs = 0, be = 0, bm = 0;
 
                 for (var j = 0; j < 4; j++) {
                     var sx = _sxA[j], ex = _exA[j];
-                    var mx = (sx + ex) * 0.5;
-                    var co = (sx > ex ? sx - ex : ex - sx) + (sy > ey ? sy - ey : ey - sy);
+                    var mx = 0;
+                    var co = 0;
+
+                    if (j === 1) { // R -> R
+                        mx = (sx > ex ? sx : ex) + 20;
+                        co = (mx - sx) + (mx - ex) + (sy > ey ? sy - ey : ey - sy);
+                    } else if (j === 2) { // L -> L
+                        mx = (sx < ex ? sx : ex) - 20;
+                        co = (sx - mx) + (ex - mx) + (sy > ey ? sy - ey : ey - sy);
+                    } else if (j === 0) { // R -> L
+                        mx = (sx + ex) * 0.5;
+                        co = (sx > ex ? sx - ex + 50000 : ex - sx) + (sy > ey ? sy - ey : ey - sy);
+                    } else { // L -> R
+                        mx = (sx + ex) * 0.5;
+                        co = (sx < ex ? ex - sx + 50000 : sx - ex) + (sy > ey ? sy - ey : ey - sy);
+                    }
 
                     var s1L = sx < mx ? sx : mx, s1R = sx > mx ? sx : mx;
                     var s3L = mx < ex ? mx : ex, s3R = mx > ex ? mx : ex;

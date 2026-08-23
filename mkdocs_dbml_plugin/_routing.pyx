@@ -33,13 +33,37 @@ cdef double _path_cost(list waypoints):
 
 
 cdef list _route_one(double sx, double sy, double ex, double ey,
-                     int skip1, int skip2, Rect *rects, int n, double gap):
-    cdef double mid_x = (sx + ex) / 2.0
+                     int skip1, int skip2, Rect *rects, int n, double gap,
+                     str sf, str st):
     cdef double y_lo = sy if sy < ey else ey
     cdef double y_hi = sy if sy > ey else ey
-    cdef int blocker, dummy
-    cdef double left_x, right_x, jog_y, safe_x, stub
+    cdef int blocker, dummy, i
+    cdef double left_x, right_x, jog_y, safe_x, stub, mid_x
     cdef bint left_ok, right_ok
+
+    if sf == 'right' and st == 'right':
+        mid_x = (sx if sx > ex else ex) + gap
+        for i in range(n):
+            blocker = _overlaps_v(mid_x, y_lo, y_hi, rects, n, skip1, skip2)
+            if blocker >= 0:
+                if rects[blocker].x + rects[blocker].w + gap > mid_x:
+                    mid_x = rects[blocker].x + rects[blocker].w + gap
+            else:
+                break
+        return [(sx, sy), (mid_x, sy), (mid_x, ey), (ex, ey)]
+
+    if sf == 'left' and st == 'left':
+        mid_x = (sx if sx < ex else ex) - gap
+        for i in range(n):
+            blocker = _overlaps_v(mid_x, y_lo, y_hi, rects, n, skip1, skip2)
+            if blocker >= 0:
+                if rects[blocker].x - gap < mid_x:
+                    mid_x = rects[blocker].x - gap
+            else:
+                break
+        return [(sx, sy), (mid_x, sy), (mid_x, ey), (ex, ey)]
+
+    mid_x = (sx + ex) / 2.0
 
     blocker = _overlaps_v(mid_x, y_lo, y_hi, rects, n, skip1, skip2)
     if blocker < 0:
@@ -91,6 +115,7 @@ def route_connection(from_rect, to_rect, field_y_from, field_y_to,
     cdef double sx, ex, cost, best_cost
     cdef list wp, best_wp
     cdef str best_sf, best_st
+    cdef bint backwards
 
     best_cost = 1e18
     best_wp = []
@@ -101,8 +126,11 @@ def route_connection(from_rect, to_rect, field_y_from, field_y_to,
         for st in ('right', 'left'):
             sx = (fx + fw + 12.0) if sf == 'right' else (fx - 12.0)
             ex = (tx - 12.0) if st == 'left' else (tx + tw + 12.0)
+
+            backwards = (sf == 'right' and st == 'left' and sx >= ex) or (sf == 'left' and st == 'right' and sx <= ex)
+
             wp = _route_one(sx, field_y_from, ex, field_y_to,
-                            from_idx, to_idx, rects, n, gap)
+                            from_idx, to_idx, rects, n, gap, sf, st)
             cost = _path_cost(wp)
 
             for j in range(1, len(wp) - 1):
@@ -113,6 +141,9 @@ def route_connection(from_rect, to_rect, field_y_from, field_y_to,
                     if rects[k].x <= mx <= rects[k].x + rects[k].w and rects[k].y <= my <= rects[k].y + rects[k].h:
                         cost += 100000
                         break
+
+            if backwards:
+                cost += 50000.0
 
             if cost < best_cost:
                 best_cost = cost

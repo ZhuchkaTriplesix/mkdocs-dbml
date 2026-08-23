@@ -105,9 +105,9 @@ def test_pure_python_routing_fallback():
     to_rect = (200.0, 10.0, 100.0, 100.0)
     table_rects = [from_rect, to_rect]
 
-    wp, sf, st = _routing_py._route_one_py(
+    wp = _routing_py._route_one_py(
         110.0, 30.0, 190.0, 30.0, 0, 1, table_rects, len(table_rects), 20.0
-    ), "right", "left"
+    )
     assert len(wp) >= 2
 
     wp, sf, st = _routing_py._route_connection_py(
@@ -116,4 +116,41 @@ def test_pure_python_routing_fallback():
     assert len(wp) >= 2
     assert sf in ("left", "right")
     assert st in ("left", "right")
+
+
+def test_same_side_right_right_routing():
+    from mkdocs_dbml_plugin import _routing_py
+    from mkdocs_dbml_plugin.routing import route_connection
+
+    from_rect = (300.0, 50.0, 150.0, 120.0)   # left = 300, right = 450
+    to_rect = (310.0, 250.0, 160.0, 120.0)    # left = 310, right = 470
+    table_rects = [from_rect, to_rect]
+
+    # Explicit right-to-right
+    wp_rr = _routing_py._route_one_py(
+        462.0, 80.0, 482.0, 280.0, 0, 1, table_rects, 2, 20.0, sf="right", st="right"
+    )
+    assert len(wp_rr) == 4
+    assert wp_rr[1][0] >= 470.0 + 20.0
+    assert wp_rr[2][0] == wp_rr[1][0]
+
+    # Explicit left-to-left
+    wp_ll = _routing_py._route_one_py(
+        288.0, 80.0, 298.0, 280.0, 0, 1, table_rects, 2, 20.0, sf="left", st="left"
+    )
+    assert len(wp_ll) == 4
+    assert wp_ll[1][0] <= 300.0 - 20.0
+    assert wp_ll[2][0] == wp_ll[1][0]
+
+    # Global route_connection picks the best same-side outer corridor
+    wp, sf, st = route_connection(
+        from_rect, to_rect, 80.0, 280.0, 0, 1, table_rects, gap=20.0
+    )
+    assert len(wp) == 4
+    if sf == "right" and st == "right":
+        assert wp[1][0] >= 470.0
+    elif sf == "left" and st == "left":
+        assert wp[1][0] <= 300.0
+
+
 
