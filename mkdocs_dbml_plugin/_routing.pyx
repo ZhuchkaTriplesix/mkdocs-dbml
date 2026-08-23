@@ -33,13 +33,59 @@ cdef double _path_cost(list waypoints):
 
 
 cdef list _route_one(double sx, double sy, double ex, double ey,
-                     int skip1, int skip2, Rect *rects, int n, double gap):
-    cdef double mid_x = (sx + ex) / 2.0
+                      int skip1, int skip2, Rect *rects, int n, double gap,
+                      str sf='right', str st='left', double lane_offset=0.0):
     cdef double y_lo = sy if sy < ey else ey
-    cdef double y_hi = sy if sy > ey else ey
-    cdef int blocker, dummy
-    cdef double left_x, right_x, jog_y, safe_x, stub
+    cdef double y_hi = ey if sy < ey else sy
+    cdef double mid_x, left_x, right_x, safe_x, jog_y, stub
+    cdef int blocker, i
     cdef bint left_ok, right_ok
+
+    if sf == 'right' and st == 'right':
+        mid_x = (sx if sx > ex else ex) + gap + lane_offset
+        for i in range(n):
+            blocker = _overlaps_v(mid_x, y_lo, y_hi, rects, n, skip1, skip2)
+            if blocker >= 0:
+                if rects[blocker].x + rects[blocker].w + gap + lane_offset > mid_x:
+                    mid_x = rects[blocker].x + rects[blocker].w + gap + lane_offset
+            else:
+                break
+        return [(sx, sy), (mid_x, sy), (mid_x, ey), (ex, ey)]
+
+    if sf == 'left' and st == 'left':
+        mid_x = (sx if sx < ex else ex) - (gap + lane_offset)
+        for i in range(n):
+            blocker = _overlaps_v(mid_x, y_lo, y_hi, rects, n, skip1, skip2)
+            if blocker >= 0:
+                if rects[blocker].x - (gap + lane_offset) < mid_x:
+                    mid_x = rects[blocker].x - (gap + lane_offset)
+            else:
+                break
+        return [(sx, sy), (mid_x, sy), (mid_x, ey), (ex, ey)]
+
+    # S-step for staggered diagonal tables with vertical clearance
+    cdef double fx = rects[skip1].x, fy = rects[skip1].y, fw = rects[skip1].w, fh = rects[skip1].h
+    cdef double tx = rects[skip2].x, ty = rects[skip2].y, tw = rects[skip2].w, th = rects[skip2].h
+    cdef bint vert_clearance = (fy + fh + 15.0 <= ty) or (ty + th + 15.0 <= fy)
+    cdef double mid_y
+
+    if sf == 'right' and st == 'left' and sx >= ex and vert_clearance:
+        mid_y = (fy + fh + ty) * 0.5 + lane_offset * 0.5 if (fy + fh <= ty) else (ty + th + fy) * 0.5 + lane_offset * 0.5
+        stub = 24.0
+        return [
+            (sx, sy), (sx + stub, sy), (sx + stub, mid_y),
+            (ex - stub, mid_y), (ex - stub, ey), (ex, ey)
+        ]
+
+    if sf == 'left' and st == 'right' and sx <= ex and vert_clearance:
+        mid_y = (fy + fh + ty) * 0.5 - lane_offset * 0.5 if (fy + fh <= ty) else (ty + th + fy) * 0.5 - lane_offset * 0.5
+        stub = 24.0
+        return [
+            (sx, sy), (sx - stub, sy), (sx - stub, mid_y),
+            (ex + stub, mid_y), (ex + stub, ey), (ex, ey)
+        ]
+
+    mid_x = (sx + ex) * 0.5 + (lane_offset * 0.5 if sf == 'right' else -lane_offset * 0.5)
 
     blocker = _overlaps_v(mid_x, y_lo, y_hi, rects, n, skip1, skip2)
     if blocker < 0:
@@ -73,24 +119,31 @@ cdef list _route_one(double sx, double sy, double ex, double ey,
 
 
 def route_connection(from_rect, to_rect, field_y_from, field_y_to,
-                     from_idx, to_idx, table_rects, gap=20.0):
+                     from_idx, to_idx, table_rects, gap=48.0, lane_offset=0.0,
+                     preferred_side_to=None):
     cdef int n = len(table_rects)
     cdef Rect *rects = <Rect *>malloc(n * sizeof(Rect))
     if rects == NULL:
         return [(0, 0), (0, 0)], 'right', 'left'
 
     cdef int i
+    cdef double avg_cx = 0.0
     for i in range(n):
         rects[i].x = table_rects[i][0]
         rects[i].y = table_rects[i][1]
         rects[i].w = table_rects[i][2]
         rects[i].h = table_rects[i][3]
+        avg_cx += rects[i].x + rects[i].w * 0.5
+    if n > 0:
+        avg_cx /= n
 
     cdef double fx = from_rect[0], fy = from_rect[1], fw = from_rect[2], fh = from_rect[3]
     cdef double tx = to_rect[0], ty = to_rect[1], tw = to_rect[2], th = to_rect[3]
+    cdef double from_cx = fx + fw * 0.5
     cdef double sx, ex, cost, best_cost
     cdef list wp, best_wp
     cdef str best_sf, best_st
+    cdef bint backwards
 
     best_cost = 1e18
     best_wp = []
@@ -99,29 +152,108 @@ def route_connection(from_rect, to_rect, field_y_from, field_y_to,
 
     for sf in ('right', 'left'):
         for st in ('right', 'left'):
-            sx = (fx + fw + 12.0) if sf == 'right' else (fx - 12.0)
-            ex = (tx - 12.0) if st == 'left' else (tx + tw + 12.0)
+            sx = (fx + fw) if sf == 'right' else fx
+            ex = tx if st == 'left' else (tx + tw)
+
+            backwards = (sf == 'right' and st == 'left' and sx >= ex) or (sf == 'left' and st == 'right' and sx <= ex)
+
             wp = _route_one(sx, field_y_from, ex, field_y_to,
-                            from_idx, to_idx, rects, n, gap)
+                            from_idx, to_idx, rects, n, gap, sf, st, lane_offset)
             cost = _path_cost(wp)
 
-            for j in range(1, len(wp) - 1):
-                mx, my = wp[j]
+            # Check collisions
+            for j in range(len(wp) - 1):
+                x1, y1 = wp[j]
+                x2, y2 = wp[j + 1]
+                lo_x = min(x1, x2)
+                hi_x = max(x1, x2)
+                lo_y = min(y1, y2)
+                hi_y = max(y1, y2)
+
+                # Third-party tables
                 for k in range(n):
                     if k == from_idx or k == to_idx:
                         continue
-                    if rects[k].x <= mx <= rects[k].x + rects[k].w and rects[k].y <= my <= rects[k].y + rects[k].h:
+                    if lo_x <= rects[k].x + rects[k].w + 5.0 and hi_x >= rects[k].x - 5.0 and lo_y <= rects[k].y + rects[k].h + 5.0 and hi_y >= rects[k].y - 5.0:
                         cost += 100000
                         break
 
+                # from_table and to_table interior check
+                if fabs(x1 - x2) < 1e-3:  # Vertical segment
+                    for k in (from_idx, to_idx):
+                        if rects[k].x + 2.0 < x1 < rects[k].x + rects[k].w - 2.0:
+                            if lo_y < rects[k].y + rects[k].h - 2.0 and hi_y > rects[k].y + 2.0:
+                                cost += 100000
+                                break
+                elif fabs(y1 - y2) < 1e-3:  # Horizontal segment
+                    for k in (from_idx, to_idx):
+                        if rects[k].y + 2.0 < y1 < rects[k].y + rects[k].h - 2.0:
+                            if j > 0 and j < len(wp) - 2:
+                                if lo_x < rects[k].x + rects[k].w - 2.0 and hi_x > rects[k].x + 2.0:
+                                    cost += 100000
+                                    break
+                            elif j == 0 and k == from_idx:
+                                if (x1 >= rects[k].x + rects[k].w - 2.0 and x2 < rects[k].x + rects[k].w - 2.0) or (x1 <= rects[k].x + 2.0 and x2 > rects[k].x + 2.0):
+                                    cost += 100000
+                                    break
+                            elif j == len(wp) - 2 and k == to_idx:
+                                if (x2 >= rects[k].x + rects[k].w - 2.0 and x1 < rects[k].x + rects[k].w - 2.0) or (x2 <= rects[k].x + 2.0 and x1 > rects[k].x + 2.0):
+                                    cost += 100000
+                                    break
+
+            if backwards and len(wp) == 4:
+                cost += 50000
+
+            # Narrow gap penalty
+            if sf == 'right' and st == 'left' and 0.0 <= ex - sx < 48.0:
+                cost += 300.0
+            elif sf == 'left' and st == 'right' and 0.0 <= sx - ex < 48.0:
+                cost += 300.0
+
+            # Preferred inbound side
+            if preferred_side_to is not None:
+                if st == preferred_side_to:
+                    cost -= 250.0
+                else:
+                    cost += 250.0
+
+            if sf == st:
+                if sf == 'right' and from_cx > avg_cx:
+                    cost += 10.0
+                elif sf == 'left' and from_cx <= avg_cx:
+                    cost += 10.0
+
             if cost < best_cost:
                 best_cost = cost
-                best_wp = wp
                 best_sf = sf
                 best_st = st
 
     free(rects)
-    return best_wp, best_sf, best_st
+
+    cdef double dx
+    cdef tuple cp1, cp2
+    sx = (fx + fw) if best_sf == 'right' else fx
+    ex = tx if best_st == 'left' else (tx + tw)
+
+    if best_sf == 'right' and best_st == 'left':
+        dx = (48.0 if fabs(ex - sx) * 0.5 < 48.0 else fabs(ex - sx) * 0.5) + lane_offset * 0.5
+        cp1 = (sx + dx, field_y_from)
+        cp2 = (ex - dx, field_y_to)
+    elif best_sf == 'left' and best_st == 'right':
+        dx = (48.0 if fabs(sx - ex) * 0.5 < 48.0 else fabs(sx - ex) * 0.5) + lane_offset * 0.5
+        cp1 = (sx - dx, field_y_from)
+        cp2 = (ex + dx, field_y_to)
+    elif best_sf == 'right' and best_st == 'right':
+        dx = 48.0 + fabs(field_y_to - field_y_from) * 0.25 + lane_offset
+        cp1 = ((sx if sx > ex else ex) + dx, field_y_from)
+        cp2 = ((sx if sx > ex else ex) + dx, field_y_to)
+    else:  # left to left
+        dx = 48.0 + fabs(field_y_to - field_y_from) * 0.25 + lane_offset
+        cp1 = ((sx if sx < ex else ex) - dx, field_y_from)
+        cp2 = ((sx if sx < ex else ex) - dx, field_y_to)
+
+    cdef list bezier_wp = [(sx, field_y_from), cp1, cp2, (ex, field_y_to)]
+    return bezier_wp, best_sf, best_st
 
 
 def build_table_rects(positions, dimensions):

@@ -1,5 +1,10 @@
 from pydbml import PyDBML
 import hashlib
+from pathlib import Path
+try:
+    import numpy as np
+except ImportError:
+    np = None
 from .layout import GraphLayoutEngine
 from .config import (
     get_theme_colors,
@@ -44,6 +49,10 @@ class DbmlRenderer:
         self._table_names, self._table_idx, self._table_rects = build_table_rects(
             self.table_positions, self.table_dimensions
         )
+        if np is not None and self._table_rects:
+            self._table_rects_np = np.array(self._table_rects, dtype=np.float64)
+        else:
+            self._table_rects_np = self._table_rects
 
         diagram_id = hashlib.sha256(dbml_code.encode()).hexdigest()[:16]
 
@@ -58,7 +67,7 @@ class DbmlRenderer:
             '<button type="button" class="dbml-export-btn dbml-export-png-btn" title="Export PNG" aria-label="Export PNG">'
             '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>'
             '<button type="button" class="dbml-fullscreen-btn" title="Fullscreen" aria-label="Fullscreen">'
-            '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
             '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>'
             "</svg></button></div>"
         )
@@ -190,6 +199,22 @@ class DbmlRenderer:
 
         table_groups = getattr(parsed, "table_groups", None) or []
         self._parsed_table_groups = table_groups
+        self._table_to_group = {}
+        for tg in table_groups:
+            for item in tg.items:
+                name = item.name if hasattr(item, "name") else item
+                self._table_to_group[name] = tg.name
+
+        self._fk_fields = {}
+        for table in parsed.tables:
+            fk_set = set()
+            for ref in getattr(table, "_refs", []):
+                if hasattr(ref, "col1") and ref.col1:
+                    for col in ref.col1:
+                        fk_set.add(col.name)
+            if fk_set:
+                self._fk_fields[table.name] = fk_set
+
         if table_groups:
             svg_parts.append('<g class="dbml-tablegroups-layer">')
             for tg in table_groups:
@@ -198,8 +223,34 @@ class DbmlRenderer:
 
         if parsed.refs:
             svg_parts.append('<g class="dbml-relationships-layer">')
+            pair_counts: dict[tuple[int, int], int] = {}
+            target_field_sides: dict[tuple[str, str], str] = {}
             for ref in parsed.refs:
-                svg_parts.append(self._render_relationship_line(ref))
+                col1 = ref.col1[0] if ref.col1 else None
+                col2 = ref.col2[0] if ref.col2 else None
+                pref_side = None
+                target_key = None
+                if col1 and col2:
+                    t1_idx = self._table_idx.get(col1.table.name, -1)
+                    t2_idx = self._table_idx.get(col2.table.name, -1)
+                    pair_key = (min(t1_idx, t2_idx), max(t1_idx, t2_idx))
+                    lane_idx = pair_counts.get(pair_key, 0)
+                    pair_counts[pair_key] = lane_idx + 1
+
+                    target_key = (col2.table.name, col2.name)
+                    if target_key in target_field_sides:
+                        prev_side = target_field_sides[target_key]
+                        pref_side = "right" if prev_side == "left" else "left"
+                else:
+                    lane_idx = 0
+                lane_offset = lane_idx * 14.0
+                rel_svg, side_to = self._render_relationship_line(
+                    ref, lane_offset=lane_offset, preferred_side_to=pref_side
+                )
+                if target_key and side_to:
+                    target_field_sides[target_key] = side_to
+                if rel_svg:
+                    svg_parts.append(rel_svg)
             svg_parts.append("</g>")
 
         svg_parts.append('<g class="dbml-tables-layer">')
@@ -259,15 +310,8 @@ class DbmlRenderer:
 
         svg = []
 
-        group_attr = ""
-        for tg in getattr(self, "_parsed_table_groups", None) or []:
-            names_in_tg = [
-                item.name if hasattr(item, "name") else item
-                for item in tg.items
-            ]
-            if table.name in names_in_tg:
-                group_attr = f' data-group="{self._escape_html(tg.name)}"'
-                break
+        group_name = getattr(self, "_table_to_group", {}).get(table.name)
+        group_attr = f' data-group="{self._escape_html(group_name)}"' if group_name else ""
         svg.append(
             f'<g class="dbml-table-group" data-table="{self._escape_html(table.name)}"{group_attr}>'
         )
@@ -280,7 +324,8 @@ class DbmlRenderer:
             f'class="dbml-table-bg" fill="{table_fill}" stroke="{table_stroke}" stroke-width="2" rx="8" filter="url(#shadow)"/>'
         )
 
-        gradient_id = f"gradient-{hashlib.sha256(table.name.encode()).hexdigest()[:16]}"
+        table_hash = hashlib.sha256(table.name.encode()).hexdigest()[:16]
+        gradient_id = f"gradient-{table_hash}"
         svg.append(
             f'<defs><linearGradient id="{gradient_id}" x1="0%" y1="0%" x2="100%" y2="0%">'
         )
@@ -292,7 +337,7 @@ class DbmlRenderer:
         )
         svg.append("</linearGradient></defs>")
 
-        clip_id = f"clip-{hashlib.sha256(table.name.encode()).hexdigest()[:16]}"
+        clip_id = f"clip-{table_hash}"
         svg.append(
             f'<defs><clipPath id="{clip_id}"><rect x="{x}" y="{y}" width="{width}" height="44" rx="8"/></clipPath></defs>'
         )
@@ -331,14 +376,7 @@ class DbmlRenderer:
         is_dark = self.theme in ("dark", "dark_gray", "black")
         name_color = "#f5f5f5" if self.theme == "black" else ("#e5e7eb" if is_dark else "#1f2937")
         type_color = "#c4b5fd" if self.theme == "black" else ("#a5b4fc" if is_dark else "#7c3aed")
-        is_fk = False
-
-        for ref in getattr(table, "_refs", []):
-            if hasattr(ref, "col1") and ref.col1:
-                for col in ref.col1:
-                    if col.name == column.name:
-                        is_fk = True
-                        break
+        is_fk = column.name in getattr(self, "_fk_fields", {}).get(table.name, ())
 
         tooltip_parts = [f"{column.name}: {column.type}"]
         if column.pk:
@@ -421,12 +459,17 @@ class DbmlRenderer:
 
         return "".join(svg)
 
-    def _render_relationship_line(self, ref) -> str:
+    def _render_relationship_line(
+        self,
+        ref,
+        lane_offset: float = 0.0,
+        preferred_side_to: str | None = None,
+    ) -> tuple[str, str]:
         col1 = ref.col1[0] if ref.col1 else None
         col2 = ref.col2[0] if ref.col2 else None
 
         if not col1 or not col2:
-            return ""
+            return "", ""
 
         table1_name = col1.table.name
         table2_name = col2.table.name
@@ -437,12 +480,12 @@ class DbmlRenderer:
             table1_name not in self.field_positions
             or table2_name not in self.field_positions
         ):
-            return ""
+            return "", ""
         if (
             field1_name not in self.field_positions[table1_name]
             or field2_name not in self.field_positions[table2_name]
         ):
-            return ""
+            return "", ""
 
         _, y1_field = self.field_positions[table1_name][field1_name]
         _, y2_field = self.field_positions[table2_name][field2_name]
@@ -460,14 +503,23 @@ class DbmlRenderer:
             y2_field,
             from_idx,
             to_idx,
-            self._table_rects,
+            getattr(self, "_table_rects_np", self._table_rects),
             gap=CONN_GAP,
+            lane_offset=lane_offset,
+            preferred_side_to=preferred_side_to,
         )
 
-        parts = [f"M {waypoints[0][0]} {waypoints[0][1]}"]
-        for wx, wy in waypoints[1:]:
-            parts.append(f"L {wx} {wy}")
-        path = " ".join(parts)
+        if len(waypoints) == 4:
+            sx, sy = waypoints[0]
+            cp1x, cp1y = waypoints[1]
+            cp2x, cp2y = waypoints[2]
+            ex, ey = waypoints[3]
+            path = f"M {sx} {sy} C {cp1x} {cp1y}, {cp2x} {cp2y}, {ex} {ey}"
+        else:
+            parts = [f"M {waypoints[0][0]} {waypoints[0][1]}"]
+            for wx, wy in waypoints[1:]:
+                parts.append(f"L {wx} {wy}")
+            path = " ".join(parts)
 
         marker_start = ""
         marker_end = ""
@@ -502,7 +554,7 @@ class DbmlRenderer:
         svg.append('class="dbml-relationship-line" opacity="0.7"/>')
         svg.append("</g>")
 
-        return "".join(svg)
+        return "".join(svg), side_to
 
     def _escape_html(self, text: str) -> str:
         return (
@@ -513,310 +565,11 @@ class DbmlRenderer:
             .replace("'", "&#x27;")
         )
 
+    _cached_css = None
+
     @staticmethod
     def get_css(theme="default") -> str:
-        base_css = """
-        .dbml-diagram-wrapper {
-            margin: 2rem 0;
-            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-            border-radius: 16px;
-            border: 1px solid #e5e7eb;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-            position: relative;
-            cursor: grab;
-            user-select: none;
-            height: 600px;
-        }
-        
-        .dbml-controls {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            display: flex;
-            gap: 0.5rem;
-            z-index: 10;
-            pointer-events: none;
-        }
-        
-        .dbml-export-btn {
-            pointer-events: auto;
-            background: white;
-            border: none;
-            border-radius: 6px;
-            width: 32px;
-            height: 32px;
-            cursor: pointer;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            transition: background 0.2s, color 0.2s;
-            color: #4b5563;
-        }
-        
-        .dbml-export-btn:hover {
-            background: #6366f1;
-            color: white;
-        }
-        
-        .dbml-fullscreen-btn {
-            pointer-events: auto;
-            background: white;
-            border: none;
-            border-radius: 8px;
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: background 0.2s, transform 0.2s;
-            color: #4b5563;
-        }
-        
-        .dbml-fullscreen-btn:hover {
-            background: #6366f1;
-            color: white;
-            transform: scale(1.05);
-        }
-        
-        .dbml-diagram-wrapper:fullscreen {
-            height: 100vh !important;
-            width: 100vw;
-            border-radius: 0;
-            max-height: none;
-        }
-        
-        .dbml-diagram-wrapper::backdrop {
-            background: #0f172a;
-        }
-        
-        .dbml-legend {
-            position: absolute;
-            bottom: 0.75rem;
-            left: 0.75rem;
-            background: white;
-            border: none;
-            border-radius: 8px;
-            padding: 0.4rem 0.6rem;
-            display: flex;
-            gap: 0.6rem;
-            font-size: 10px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-            z-index: 10;
-        }
-        
-        .dbml-legend-item {
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-            color: #4b5563;
-            font-weight: 500;
-        }
-        
-        .dbml-legend-item svg {
-            flex-shrink: 0;
-            width: 12px;
-            height: 12px;
-        }
-        
-        .dbml-legend-item span {
-            white-space: nowrap;
-        }
-        
-        .dbml-diagram {
-            width: 100%;
-            height: 100%;
-            overflow: visible;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            will-change: transform;
-            transform-origin: 0 0;
-            pointer-events: none;
-        }
-        
-        .dbml-tablegroup-bg {
-            pointer-events: fill;
-            cursor: grab;
-        }
-        
-        .dbml-tablegroup-bg:active {
-            cursor: grabbing;
-        }
-        
-        .dbml-tablegroup text {
-            pointer-events: none;
-        }
-        
-        .dbml-table-group {
-            cursor: pointer;
-            will-change: transform;
-            pointer-events: all;
-        }
-        
-        .dbml-table-group:hover .dbml-table-bg {
-            stroke: #6366f1;
-            stroke-width: 3;
-        }
-        
-        .dbml-field-row {
-            cursor: help;
-        }
-        
-        .dbml-field-row text {
-            font-weight: 600;
-        }
-        
-        .dbml-field-row:hover text {
-            font-weight: 700;
-        }
-        
-        .dbml-table-title {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-weight: 700;
-            user-select: none;
-        }
-        
-        .dbml-relationship-line {
-            opacity: 0.7;
-            pointer-events: stroke;
-            cursor: pointer;
-            stroke-linecap: square;
-        }
-        
-        .dbml-relationship-hit {
-            pointer-events: stroke;
-            cursor: pointer;
-            stroke: transparent;
-            fill: none;
-        }
-        
-        .dbml-relationship-group {
-            pointer-events: none;
-        }
-        
-        .dbml-relationships-layer {
-            pointer-events: none;
-        }
-        
-        .dbml-relationship-line.selected {
-            opacity: 1 !important;
-            stroke-width: 3 !important;
-            filter: drop-shadow(0 0 4px currentColor);
-        }
-        
-        .dbml-field-row.selected rect {
-            fill: rgba(99, 102, 241, 0.1);
-        }
-        
-        .dbml-field-row.selected text {
-            font-weight: 700 !important;
-        }
-        
-        .dbml-rel-label {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            user-select: none;
-            pointer-events: none;
-        }
-        
-        .dbml-error {
-            padding: 1rem 1.5rem;
-            background: #fef2f2;
-            border: 2px solid #ef4444;
-            border-radius: 8px;
-            color: #dc2626;
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            margin: 2rem 0;
-        }
-        
-        @media (max-width: 768px) {
-            .dbml-diagram-wrapper {
-                height: 400px;
-            }
-            
-            .dbml-controls {
-                top: 0.5rem;
-                right: 0.5rem;
-            }
-            
-            .dbml-fullscreen-btn {
-                width: 36px;
-                height: 36px;
-            }
-            
-            .dbml-legend {
-                position: static;
-                margin-top: 1rem;
-                flex-wrap: wrap;
-            }
-        }
-        
-        @media (prefers-color-scheme: dark) {
-            .dbml-diagram-wrapper {
-                background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-                border-color: #374151;
-            }
-            
-            .dbml-legend {
-                background: rgba(31, 41, 55, 0.95);
-                backdrop-filter: blur(10px);
-            }
-            
-            .dbml-legend-item {
-                color: #e5e7eb;
-            }
-            
-            .dbml-export-btn {
-                background: rgba(31, 41, 55, 0.95);
-                color: #e5e7eb;
-            }
-            
-            .dbml-export-btn:hover {
-                background: #818cf8;
-            }
-            
-            .dbml-fullscreen-btn {
-                background: rgba(31, 41, 55, 0.95);
-                color: #e5e7eb;
-            }
-            
-            .dbml-fullscreen-btn:hover {
-                background: #818cf8;
-            }
-            
-            .dbml-table-bg {
-                fill: #111827;
-                stroke: #374151;
-            }
-            
-            .dbml-table-group:hover .dbml-table-bg {
-                stroke: #818cf8;
-                filter: drop-shadow(0 12px 24px rgba(129, 140, 248, 0.4));
-            }
-            
-            .dbml-table-title {
-                fill: white;
-            }
-            
-            text {
-                fill: #e5e7eb;
-            }
-            
-            .dbml-relationship-line {
-                stroke: #818cf8;
-            }
-            
-            .dbml-rel-label {
-                fill: white;
-            }
-            
-            .dbml-relationship-line:hover {
-                filter: drop-shadow(0 4px 12px rgba(129, 140, 248, 0.6));
-            }
-        }
-        """
-
-        return base_css
+        if DbmlRenderer._cached_css is None:
+            css_path = Path(__file__).parent / "assets" / "dbml.css"
+            DbmlRenderer._cached_css = css_path.read_text(encoding="utf-8")
+        return DbmlRenderer._cached_css

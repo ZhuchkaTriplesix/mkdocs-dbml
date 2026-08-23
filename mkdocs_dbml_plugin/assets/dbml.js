@@ -183,6 +183,7 @@ D.addEventListener('DOMContentLoaded', function() {
         var DR = null;
         var GR = null;
         var MX0 = 0, MY0 = 0, IX = 0, IY = 0, CX0 = 0, CY0 = 0;
+        var _rafPending = false; // RAF throttle flag for uc() + updateTableGroups()
 
         svg.style.transformOrigin = '0 0';
         svg.style.willChange = 'transform';
@@ -226,7 +227,15 @@ D.addEventListener('DOMContentLoaded', function() {
             VTG.push({ g: g, rect: g.querySelector('.dbml-tablegroup-bg'), text: g.querySelector('text'), members: members });
         }
 
+        var FE = Object.create(null);
+        var allFields = svg.querySelectorAll('[data-field]');
+        for (var i = 0; i < allFields.length; i++) {
+            var fAttr = allFields[i].getAttribute('data-field');
+            if (fAttr) FE[fAttr] = allFields[i];
+        }
+
         function updateTableGroups() {
+            if (VTG.length === 0) return;
             for (var i = 0; i < VTG.length; i++) {
                 var v = VTG[i];
                 if (v.members.length === 0) continue;
@@ -254,11 +263,37 @@ D.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        var activePointers = new Map();
+        var initialPinchDist = 0;
+        var initialPinchScale = 1;
+        var initialPinchMidX = 0;
+        var initialPinchMidY = 0;
+
+        function initPinch() {
+            M = 4;
+            DR = null;
+            GR = null;
+            var pts = Array.from(activePointers.values());
+            var p1 = pts[0], p2 = pts[1];
+            initialPinchDist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+            initialPinchScale = S;
+            initialPinchMidX = (p1.x + p2.x) * 0.5;
+            initialPinchMidY = (p1.y + p2.y) * 0.5;
+            CX0 = TX;
+            CY0 = TY;
+        }
+
         for (var i = 0; i < VTG.length; i++) { (function(v) {
             if (!v.rect) return;
             v.rect.addEventListener('pointerdown', function(e) {
                 e.stopPropagation();
                 e.preventDefault();
+                activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                if (activePointers.size === 2) {
+                    initPinch();
+                    W.setPointerCapture(e.pointerId);
+                    return;
+                }
                 M = 3; GR = v.members;
                 MX0 = e.clientX; MY0 = e.clientY;
                 for (var k = 0; k < GR.length; k++) {
@@ -280,8 +315,17 @@ D.addEventListener('DOMContentLoaded', function() {
         var C_tt = new Array(CN);
         var C_sy = new Float64Array(CN);
         var C_ey = new Float64Array(CN);
+        var C_lane = new Float64Array(CN);
+        var C_pref_st = new Int32Array(CN);
+        var C_last_j = new Int32Array(CN);
+        for (var idx = 0; idx < CN; idx++) {
+            C_last_j[idx] = -1;
+            C_pref_st[idx] = -1;
+        }
 
         var C_hit = new Array(CN);
+        var pairCounts = {};
+        var targetFieldSides = {};
         for (var i = 0; i < CN; i++) {
             var g = rg[i];
             var fa = g.getAttribute('data-from') || '';
@@ -302,10 +346,25 @@ D.addEventListener('DOMContentLoaded', function() {
                 if (TA[j].n === fn) C_fi[i] = j;
                 if (TA[j].n === tn) C_ti[i] = j;
             }
+            if (C_fi[i] >= 0 && C_ti[i] >= 0) {
+                var pKey = C_fi[i] < C_ti[i] ? C_fi[i] + '_' + C_ti[i] : C_ti[i] + '_' + C_fi[i];
+                var lIdx = pairCounts[pKey] || 0;
+                C_lane[i] = lIdx * 14.0;
+                pairCounts[pKey] = lIdx + 1;
+
+                if (ta in targetFieldSides) {
+                    C_pref_st[i] = targetFieldSides[ta] === 0 ? 1 : 0;
+                }
+            }
             var nums = visP.getAttribute('d').match(/-?[\d.]+/g);
             if (nums) {
                 C_sy[i] = +nums[1];
                 C_ey[i] = +nums[nums.length - 1];
+                var exInit = +nums[nums.length - 2];
+                if (C_ti[i] >= 0 && !(ta in targetFieldSides)) {
+                    var tInit = TA[C_ti[i]];
+                    targetFieldSides[ta] = Math.abs(exInit - tInit.ox) < Math.abs(exInit - (tInit.ox + tInit.ow)) ? 0 : 1;
+                }
             }
         }
 
@@ -325,6 +384,12 @@ D.addEventListener('DOMContentLoaded', function() {
             td.e.addEventListener('pointerdown', function(e) {
                 e.stopPropagation();
                 e.preventDefault();
+                activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                if (activePointers.size === 2) {
+                    initPinch();
+                    W.setPointerCapture(e.pointerId);
+                    return;
+                }
                 M = 1; DR = td;
                 IX = td.dx; IY = td.dy;
                 MX0 = e.clientX; MY0 = e.clientY;
@@ -339,6 +404,12 @@ D.addEventListener('DOMContentLoaded', function() {
         })(TA[i]); }
 
         W.addEventListener('pointerdown', function(e) {
+            activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            if (activePointers.size === 2) {
+                initPinch();
+                W.setPointerCapture(e.pointerId);
+                return;
+            }
             if (M !== 0) return;
             e.preventDefault();
             M = 2;
@@ -349,14 +420,45 @@ D.addEventListener('DOMContentLoaded', function() {
         });
 
         W.addEventListener('pointermove', function(e) {
-            if (M === 1) {
+            if (activePointers.has(e.pointerId)) {
+                activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            }
+            if (M === 4 && activePointers.size >= 2) {
+                var pts = Array.from(activePointers.values());
+                var p1 = pts[0], p2 = pts[1];
+                var curDist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                if (initialPinchDist > 0) {
+                    var factor = curDist / initialPinchDist;
+                    var ns = initialPinchScale * factor;
+                    if (ns < 0.1) ns = 0.1; else if (ns > 3) ns = 3;
+                    var curMidX = (p1.x + p2.x) * 0.5;
+                    var curMidY = (p1.y + p2.y) * 0.5;
+                    var r = W.getBoundingClientRect();
+                    var px = initialPinchMidX - r.left, py = initialPinchMidY - r.top;
+                    var c = ns / initialPinchScale;
+                    TX = (px - (px - CX0) * c) + (curMidX - initialPinchMidX);
+                    TY = (py - (py - CY0) * c) + (curMidY - initialPinchMidY);
+                    S = ns;
+                    svg.style.transform = 'translate(' + TX + 'px,' + TY + 'px) scale(' + S + ')';
+                }
+                return;
+            }
+            if (M === 1 && DR) {
                 var invS = 1 / S;
                 DR.dx = IX + (e.clientX - MX0) * invS;
                 DR.dy = IY + (e.clientY - MY0) * invS;
+                // Apply transform immediately for responsive feel
                 DR.e.style.transform = 'translate(' + DR.dx + 'px,' + DR.dy + 'px)';
-                uc();
-                updateTableGroups();
-            } else if (M === 3) {
+                // Throttle expensive uc() + updateTableGroups() to once per frame
+                if (!_rafPending) {
+                    _rafPending = true;
+                    requestAnimationFrame(function() {
+                        uc();
+                        if (DR && DR.group) updateTableGroups();
+                        _rafPending = false;
+                    });
+                }
+            } else if (M === 3 && GR) {
                 var invS = 1 / S;
                 var dX = (e.clientX - MX0) * invS;
                 var dY = (e.clientY - MY0) * invS;
@@ -366,8 +468,15 @@ D.addEventListener('DOMContentLoaded', function() {
                     t.dy = t._startDy + dY;
                     t.e.style.transform = 'translate(' + t.dx + 'px,' + t.dy + 'px)';
                 }
-                uc();
-                updateTableGroups();
+                // Throttle expensive uc() + updateTableGroups() to once per frame
+                if (!_rafPending) {
+                    _rafPending = true;
+                    requestAnimationFrame(function() {
+                        uc();
+                        updateTableGroups();
+                        _rafPending = false;
+                    });
+                }
             } else if (M === 2) {
                 TX = CX0 + e.clientX - MX0;
                 TY = CY0 + e.clientY - MY0;
@@ -375,8 +484,16 @@ D.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        W.addEventListener('pointerup', function(e) {
-            W.releasePointerCapture(e.pointerId);
+        function endPointer(e) {
+            activePointers.delete(e.pointerId);
+            try { W.releasePointerCapture(e.pointerId); } catch(err) {}
+            if (M === 4) {
+                if (activePointers.size < 2) {
+                    M = 0;
+                    W.style.cursor = 'grab';
+                }
+                return;
+            }
             if (M === 2) W.style.cursor = 'grab';
             if (M === 3) {
                 for (var k = 0; k < VTG.length; k++) {
@@ -384,7 +501,10 @@ D.addEventListener('DOMContentLoaded', function() {
                 }
             }
             M = 0; DR = null; GR = null;
-        });
+        }
+
+        W.addEventListener('pointerup', endPointer);
+        W.addEventListener('pointercancel', endPointer);
 
         W.addEventListener('wheel', function(e) {
             e.preventDefault();
@@ -408,43 +528,156 @@ D.addEventListener('DOMContentLoaded', function() {
                 var tL = t.ox + t.dx, tR = tL + t.ow;
                 var sy = C_sy[i] + f.dy, ey = C_ey[i] + t.dy;
 
-                _sxA[0] = fR + 12; _sxA[1] = fR + 12; _sxA[2] = fL - 12; _sxA[3] = fL - 12;
-                _exA[0] = tL - 12; _exA[1] = tR + 12; _exA[2] = tL - 12; _exA[3] = tR + 12;
+                var fT = f.oy + f.dy, fB = fT + f.oh;
+                var tT = t.oy + t.dy, tB = tT + t.oh;
+                var vertClear = (fB + 15 <= tT) || (tB + 15 <= fT);
 
-                var bc = 1e18, bs = 0, be = 0, bm = 0;
+                // 4 combinations:
+                // j=0: R -> L (fR -> tL)
+                // j=1: R -> R (fR -> tR)
+                // j=2: L -> L (fL -> tL)
+                // j=3: L -> R (fL -> tR)
+                _sxA[0] = fR; _exA[0] = tL;
+                _sxA[1] = fR; _exA[1] = tR;
+                _sxA[2] = fL; _exA[2] = tL;
+                _sxA[3] = fL; _exA[3] = tR;
+
+                var bc = 1e18, bs = 0, be = 0, bm = 0, b_is_step = false, b_my = 0, best_j = 0;
 
                 for (var j = 0; j < 4; j++) {
                     var sx = _sxA[j], ex = _exA[j];
-                    var mx = (sx + ex) * 0.5;
-                    var co = (sx > ex ? sx - ex : ex - sx) + (sy > ey ? sy - ey : ey - sy);
+                    var mx = 0;
+                    var co = 0;
+                    var is_step = false;
+                    var my = 0;
+                    var lane = C_lane[i];
 
-                    var s1L = sx < mx ? sx : mx, s1R = sx > mx ? sx : mx;
-                    var s3L = mx < ex ? mx : ex, s3R = mx > ex ? mx : ex;
-                    var vT = sy < ey ? sy : ey, vB = sy > ey ? sy : ey;
-
-                    for (var k = 0; k < TN; k++) {
-                        if (k === fi || k === ti) continue;
-                        var b = TA[k];
-                        var bL = b.ox + b.dx - 5, bR = bL + b.ow + 10;
-                        var bT = b.oy + b.dy - 5, bB = bT + b.oh + 10;
-
-                        if (sy >= bT && sy <= bB && s1R >= bL && s1L <= bR) {
-                            co += 100000; break;
+                    if (j === 1) { // R -> R
+                        mx = (sx > ex ? sx : ex) + 48 + lane;
+                        co = (mx - sx) + (mx - ex) + (sy > ey ? sy - ey : ey - sy);
+                    } else if (j === 2) { // L -> L
+                        mx = (sx < ex ? sx : ex) - (48 + lane);
+                        co = (sx - mx) + (ex - mx) + (sy > ey ? sy - ey : ey - sy);
+                    } else if (j === 0) { // R -> L
+                        if (sx >= ex && vertClear) {
+                            is_step = true;
+                            my = (fB <= tT ? (fB + tT) * 0.5 : (tB + fT) * 0.5) + lane * 0.5;
+                            co = 48 + Math.abs(sy - my) + Math.abs((sx + 24) - (ex - 24)) + Math.abs(my - ey);
+                        } else {
+                            mx = (sx + ex) * 0.5 + lane * 0.5;
+                            co = (sx > ex ? sx - ex + 50000 : ex - sx) + (sy > ey ? sy - ey : ey - sy);
                         }
-                        if (mx >= bL && mx <= bR && vB >= bT && vT <= bB) {
-                            co += 100000; break;
-                        }
-                        if (ey >= bT && ey <= bB && s3R >= bL && s3L <= bR) {
-                            co += 100000; break;
+                    } else { // L -> R
+                        if (sx <= ex && vertClear) {
+                            is_step = true;
+                            my = (fB <= tT ? (fB + tT) * 0.5 : (tB + fT) * 0.5) - lane * 0.5;
+                            co = 48 + Math.abs(sy - my) + Math.abs((sx - 24) - (ex + 24)) + Math.abs(my - ey);
+                        } else {
+                            mx = (sx + ex) * 0.5 - lane * 0.5;
+                            co = (sx < ex ? ex - sx + 50000 : sx - ex) + (sy > ey ? sy - ey : ey - sy);
                         }
                     }
-                    if (co < bc) { bc = co; bs = sx; be = ex; bm = mx; }
+
+                    // Narrow gap penalty
+                    if (j === 0 && (ex - sx) >= 0 && (ex - sx) < 48) {
+                        co += 300;
+                    } else if (j === 3 && (sx - ex) >= 0 && (sx - ex) < 48) {
+                        co += 300;
+                    }
+
+                    // Inbound preferred side
+                    if (C_pref_st[i] >= 0) {
+                        var isStRight = (j === 1 || j === 3);
+                        var wantRight = (C_pref_st[i] === 1);
+                        if (isStRight === wantRight) {
+                            co -= 250;
+                        } else {
+                            co += 250;
+                        }
+                    }
+
+                    // Hysteresis: give bonus to keep currently active side
+                    if (C_last_j[i] === j) {
+                        co -= 35;
+                    }
+
+                    // Check collisions with other tables
+                    if (!is_step) {
+                        var s1L = sx < mx ? sx : mx, s1R = sx > mx ? sx : mx;
+                        var s3L = mx < ex ? mx : ex, s3R = mx > ex ? mx : ex;
+                        var vT = sy < ey ? sy : ey, vB = sy > ey ? sy : ey;
+
+                        // Check third-party tables
+                        for (var k = 0; k < TN; k++) {
+                            if (k === fi || k === ti) continue;
+                            var b = TA[k];
+                            var bL = b.ox + b.dx - 5, bR = bL + b.ow + 10;
+                            var bT = b.oy + b.dy - 5, bB = bT + b.oh + 10;
+
+                            if (sy >= bT && sy <= bB && s1R >= bL && s1L <= bR) {
+                                co += 100000; break;
+                            }
+                            if (mx >= bL && mx <= bR && vB >= bT && vT <= bB) {
+                                co += 100000; break;
+                            }
+                            if (ey >= bT && ey <= bB && s3R >= bL && s3L <= bR) {
+                                co += 100000; break;
+                            }
+                        }
+
+                        // Check from_table and to_table interiors
+                        var endPts = [fi, ti];
+                        for (var ep = 0; ep < 2; ep++) {
+                            var ek = endPts[ep];
+                            var eb = TA[ek];
+                            var ebL = eb.ox + eb.dx + 2, ebR = eb.ox + eb.dx + eb.ow - 2;
+                            var ebT = eb.oy + eb.dy + 2, ebB = eb.oy + eb.dy + eb.oh - 2;
+
+                            if (mx > ebL && mx < ebR && vB > ebT && vT < ebB) {
+                                co += 100000; break;
+                            }
+                            if (ep === 0) { // from table
+                                if ((sx >= ebR && mx < ebR) || (sx <= ebL && mx > ebL)) {
+                                    co += 100000; break;
+                                }
+                            } else { // to table
+                                if ((ex >= ebR && mx < ebR) || (ex <= ebL && mx > ebL)) {
+                                    co += 100000; break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (co < bc) {
+                        bc = co; bs = sx; be = ex; bm = mx;
+                        b_is_step = is_step; b_my = my; best_j = j;
+                    }
                 }
 
-                var nd = 'M ' + bs + ' ' + sy +
-                    ' L ' + bm + ' ' + sy +
-                    ' L ' + bm + ' ' + ey +
-                    ' L ' + be + ' ' + ey;
+                C_last_j[i] = best_j;
+
+                var lane = C_lane[i];
+                var cp1x, cp2x, cp1y = sy, cp2y = ey;
+
+                if (best_j === 0) { // R -> L
+                    var dx = Math.max(48, Math.abs(be - bs) * 0.5) + lane * 0.5;
+                    cp1x = bs + dx;
+                    cp2x = be - dx;
+                } else if (best_j === 3) { // L -> R
+                    var dx = Math.max(48, Math.abs(bs - be) * 0.5) + lane * 0.5;
+                    cp1x = bs - dx;
+                    cp2x = be + dx;
+                } else if (best_j === 1) { // R -> R
+                    var dx = 48 + Math.abs(ey - sy) * 0.25 + lane;
+                    cp1x = Math.max(bs, be) + dx;
+                    cp2x = Math.max(bs, be) + dx;
+                } else { // L -> L
+                    var dx = 48 + Math.abs(ey - sy) * 0.25 + lane;
+                    cp1x = Math.min(bs, be) - dx;
+                    cp2x = Math.min(bs, be) - dx;
+                }
+
+                var nd = 'M ' + bs + ' ' + sy + ' C ' + cp1x + ' ' + cp1y + ', ' + cp2x + ' ' + cp2y + ', ' + be + ' ' + ey;
                 C_path[i].setAttribute('d', nd);
                 if (C_hit[i]) C_hit[i].setAttribute('d', nd);
             }
@@ -501,8 +734,8 @@ D.addEventListener('DOMContentLoaded', function() {
                 if (i !== idx) HL_line[i].style.opacity = '0.1';
             }
 
-            var fromField = svg.querySelector('[data-field="' + cssSelectorEscape(fn) + '"]');
-            var toField = svg.querySelector('[data-field="' + cssSelectorEscape(tn) + '"]');
+            var fromField = FE[fn];
+            var toField = FE[tn];
             if (fromField) fromField.classList.add('selected');
             if (toField) toField.classList.add('selected');
         }

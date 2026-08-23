@@ -30,7 +30,14 @@ class DbmlPlugin(BasePlugin):
             )
 
         js_path = Path(__file__).parent / "assets" / "dbml.js"
+        css_path = Path(__file__).parent / "assets" / "dbml.css"
         self._js_content = js_path.read_text(encoding="utf-8")
+        self._css_content = css_path.read_text(encoding="utf-8")
+        self._renderer = DbmlRenderer(
+            theme=self.config["theme"],
+            show_indexes=self.config["show_indexes"],
+            show_notes=self.config["show_notes"],
+        )
         return config
 
     def on_page_markdown(self, markdown, page, config, files):
@@ -74,11 +81,13 @@ class DbmlPlugin(BasePlugin):
                         f"{html_module.escape(str(e))}</div>"
                     )
 
-            renderer = DbmlRenderer(
-                theme=self.config["theme"],
-                show_indexes=self.config["show_indexes"],
-                show_notes=self.config["show_notes"],
-            )
+            renderer = getattr(self, "_renderer", None)
+            if renderer is None:
+                renderer = DbmlRenderer(
+                    theme=self.config["theme"],
+                    show_indexes=self.config["show_indexes"],
+                    show_notes=self.config["show_notes"],
+                )
             try:
                 return renderer.render(dbml_code)
             except (ValueError, KeyError) as e:
@@ -98,8 +107,8 @@ class DbmlPlugin(BasePlugin):
     def on_post_page(self, output, page, config):
         if "<!-- dbml-styles -->" not in output:
             return output
-        css = DbmlRenderer.get_css(self.config["theme"])
-        js = self._js_content
+        css = getattr(self, "_css_content", None) or DbmlRenderer.get_css(self.config["theme"])
+        js = getattr(self, "_js_content", "")
         output = output.replace("</head>", f"<style>{css}</style></head>")
         output = output.replace("</body>", f"<script>{js}</script></body>")
         output = output.replace("<!-- dbml-styles -->", "")
