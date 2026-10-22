@@ -13,7 +13,9 @@ function initDiagrams() {
         if (!svg) return;
         W.setAttribute('data-dbml-init', '1');
         var fsBtn = W.querySelector('.dbml-fullscreen-btn');
-        if (fsBtn) {
+        if (fsBtn && !(W.requestFullscreen || W.webkitRequestFullscreen)) {
+            fsBtn.style.display = 'none';
+        } else if (fsBtn) {
             fsBtn.addEventListener('pointerdown', function(e) { e.stopPropagation(); });
             fsBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
@@ -565,15 +567,10 @@ function initDiagrams() {
                 return;
             }
             e.preventDefault();
-            var ns = S * (e.deltaY > 0 ? 0.92 : 1.08);
-            if (ns < 0.1) ns = 0.1; else if (ns > 3) ns = 3;
+            var dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1);
+            if (dy > 100) dy = 100; else if (dy < -100) dy = -100;
             var r = W.getBoundingClientRect();
-            var px = e.clientX - r.left, py = e.clientY - r.top;
-            var c = ns / S;
-            TX = px - (px - TX) * c;
-            TY = py - (py - TY) * c;
-            S = ns;
-            svg.style.transform = 'translate(' + TX + 'px,' + TY + 'px) scale(' + S + ')';
+            zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-dy * 0.001));
         }, {passive: false});
 
         function applyT() {
