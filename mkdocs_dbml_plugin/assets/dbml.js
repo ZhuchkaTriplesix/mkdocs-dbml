@@ -189,7 +189,7 @@ D.addEventListener('DOMContentLoaded', function() {
         svg.style.willChange = 'transform';
         W.style.cursor = 'grab';
         W.style.userSelect = 'none';
-        W.style.touchAction = 'none';
+        W.style.touchAction = 'pan-y';
 
         var tg = svg.querySelectorAll('.dbml-table-group');
         var TD = Object.create(null);
@@ -211,6 +211,7 @@ D.addEventListener('DOMContentLoaded', function() {
             TD[nm] = d;
             TA[i] = d;
             g.style.cursor = 'move';
+            g.style.touchAction = 'none';
             g.style.willChange = 'transform';
         }
 
@@ -506,7 +507,23 @@ D.addEventListener('DOMContentLoaded', function() {
         W.addEventListener('pointerup', endPointer);
         W.addEventListener('pointercancel', endPointer);
 
+        var hintTimer = 0;
+        var hintEl = D.createElement('div');
+        hintEl.className = 'dbml-hint';
+        hintEl.setAttribute('aria-hidden', 'true');
+        hintEl.textContent = (/Mac|iPhone|iPad/.test(navigator.platform) ? '\u2318' : 'Ctrl') + ' + scroll to zoom';
+        W.appendChild(hintEl);
+        function showHint() {
+            hintEl.classList.add('visible');
+            clearTimeout(hintTimer);
+            hintTimer = setTimeout(function() { hintEl.classList.remove('visible'); }, 1200);
+        }
+
         W.addEventListener('wheel', function(e) {
+            if (!(e.ctrlKey || e.metaKey)) {
+                showHint();
+                return;
+            }
             e.preventDefault();
             var ns = S * (e.deltaY > 0 ? 0.92 : 1.08);
             if (ns < 0.1) ns = 0.1; else if (ns > 3) ns = 3;

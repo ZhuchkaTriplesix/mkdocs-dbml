@@ -11,6 +11,26 @@
     height: 600px;
 }
 
+.dbml-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    background: rgba(17, 24, 39, 0.85);
+    color: #f9fafb;
+    font-size: 14px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 11;
+}
+
+.dbml-hint.visible {
+    opacity: 1;
+}
+
 .dbml-controls {
     position: absolute;
     top: 1rem;
