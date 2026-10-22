@@ -10,6 +10,8 @@ except ImportError:
     np = None
 from .layout import GraphLayoutEngine
 from .config import (
+    THEMES,
+    DEFAULT_THEME,
     get_theme_colors,
     FIELD_Y_START,
     ROW_HEIGHT,
@@ -21,13 +23,13 @@ from .routing import route_connection, build_table_rects
 
 
 class DbmlRenderer:
-    def __init__(self, theme="default", show_indexes=True, show_notes=True):
-        self.theme = theme
+    def __init__(self, theme=DEFAULT_THEME, show_indexes=True, show_notes=True):
+        self.theme = theme if theme in THEMES else DEFAULT_THEME
         self.show_indexes = show_indexes
         self.show_notes = show_notes
         self.table_positions = {}
         self.table_dimensions = {}
-        self.colors = get_theme_colors(theme)
+        self.colors = get_theme_colors(self.theme)
 
     def render(self, dbml_code: str) -> str:
         parsed = PyDBML(dbml_code)
