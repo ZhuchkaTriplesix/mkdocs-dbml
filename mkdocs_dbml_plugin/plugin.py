@@ -62,9 +62,9 @@ class DbmlPlugin(BasePlugin):
 
             if file_path:
                 resolved = os.path.normpath(os.path.join(docs_dir, file_path))
-                if not os.path.abspath(resolved).startswith(
-                    os.path.abspath(docs_dir)
-                ):
+                docs_root = os.path.realpath(docs_dir)
+                real = os.path.realpath(resolved)
+                if os.path.commonpath([docs_root, real]) != docs_root:
                     return (
                         '<div class="dbml-error">DBML file path outside docs: '
                         f"{html_module.escape(file_path)}</div>"

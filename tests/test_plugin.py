@@ -84,3 +84,14 @@ file: <script>alert(1)</script>.dbml
     config = {"docs_dir": tempfile.mkdtemp()}
     result = plugin.on_page_markdown(md, None, config, None)
     assert "<script>alert" not in result
+
+
+def test_plugin_file_path_sibling_dir_with_same_prefix_blocked(plugin, tmp_path):
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    secret = tmp_path / "docs_secret"
+    secret.mkdir()
+    (secret / "x.dbml").write_text("Table t { id integer }", encoding="utf-8")
+    md = "```dbml\nfile: ../docs_secret/x.dbml\n```\n"
+    result = plugin.on_page_markdown(md, None, {"docs_dir": str(docs)}, None)
+    assert "outside docs" in result
