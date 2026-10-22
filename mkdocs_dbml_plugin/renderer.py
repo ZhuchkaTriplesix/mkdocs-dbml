@@ -60,6 +60,7 @@ class DbmlRenderer:
             self._table_rects_np = self._table_rects
 
         diagram_id = hashlib.sha256(dbml_code.encode()).hexdigest()[:16]
+        self._diagram_id = diagram_id
 
         html_parts = [
             "<!-- dbml-styles -->",
@@ -132,7 +133,7 @@ class DbmlRenderer:
         svg_parts.append("<defs>")
 
         svg_parts.append(
-            '<marker id="arrow-one-start" viewBox="0 0 10 14" markerWidth="10" markerHeight="14"'
+            f'<marker id="{self._sid("arrow-one-start")}" viewBox="0 0 10 14" markerWidth="10" markerHeight="14"'
             ' refX="0" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
         )
         svg_parts.append(
@@ -141,7 +142,7 @@ class DbmlRenderer:
         svg_parts.append("</marker>")
 
         svg_parts.append(
-            '<marker id="arrow-one-end" viewBox="0 0 10 14" markerWidth="10" markerHeight="14"'
+            f'<marker id="{self._sid("arrow-one-end")}" viewBox="0 0 10 14" markerWidth="10" markerHeight="14"'
             ' refX="10" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
         )
         svg_parts.append(
@@ -150,7 +151,7 @@ class DbmlRenderer:
         svg_parts.append("</marker>")
 
         svg_parts.append(
-            '<marker id="arrow-many-start" viewBox="0 0 16 14" markerWidth="16" markerHeight="14"'
+            f'<marker id="{self._sid("arrow-many-start")}" viewBox="0 0 16 14" markerWidth="16" markerHeight="14"'
             ' refX="0" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
         )
         svg_parts.append(
@@ -160,7 +161,7 @@ class DbmlRenderer:
         svg_parts.append("</marker>")
 
         svg_parts.append(
-            '<marker id="arrow-many-end" viewBox="0 0 16 14" markerWidth="16" markerHeight="14"'
+            f'<marker id="{self._sid("arrow-many-end")}" viewBox="0 0 16 14" markerWidth="16" markerHeight="14"'
             ' refX="16" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
         )
         svg_parts.append(
@@ -170,7 +171,7 @@ class DbmlRenderer:
         svg_parts.append("</marker>")
 
         svg_parts.append(
-            '<marker id="arrow-optional-start" viewBox="0 0 14 14" markerWidth="14" markerHeight="14"'
+            f'<marker id="{self._sid("arrow-optional-start")}" viewBox="0 0 14 14" markerWidth="14" markerHeight="14"'
             ' refX="0" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
         )
         svg_parts.append(
@@ -179,7 +180,7 @@ class DbmlRenderer:
         svg_parts.append("</marker>")
 
         svg_parts.append(
-            '<marker id="arrow-optional-end" viewBox="0 0 14 14" markerWidth="14" markerHeight="14"'
+            f'<marker id="{self._sid("arrow-optional-end")}" viewBox="0 0 14 14" markerWidth="14" markerHeight="14"'
             ' refX="14" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
         )
         svg_parts.append(
@@ -187,13 +188,13 @@ class DbmlRenderer:
         )
         svg_parts.append("</marker>")
 
-        svg_parts.append('<filter id="shadow">')
+        svg_parts.append(f'<filter id="{self._sid("shadow")}">')
         svg_parts.append(
             '<feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.15"/>'
         )
         svg_parts.append("</filter>")
 
-        svg_parts.append('<filter id="glow">')
+        svg_parts.append(f'<filter id="{self._sid("glow")}">')
         svg_parts.append('<feGaussianBlur stdDeviation="2" result="coloredBlur"/>')
         svg_parts.append(
             '<feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>'
@@ -329,11 +330,11 @@ class DbmlRenderer:
         table_stroke = self.colors["border_color"] if is_dark else "#e5e7eb"
         svg.append(f'<rect x="{x}" y="{y}" width="{width}" height="{height}" ')
         svg.append(
-            f'class="dbml-table-bg" fill="{table_fill}" stroke="{table_stroke}" stroke-width="2" rx="8" filter="url(#shadow)"/>'
+            f'class="dbml-table-bg" fill="{table_fill}" stroke="{table_stroke}" stroke-width="2" rx="8" filter="url(#{self._sid("shadow")})"/>'
         )
 
         table_hash = hashlib.sha256(table.name.encode()).hexdigest()[:16]
-        gradient_id = f"gradient-{table_hash}"
+        gradient_id = self._sid(f"gradient-{table_hash}")
         svg.append(
             f'<defs><linearGradient id="{gradient_id}" x1="0%" y1="0%" x2="100%" y2="0%">'
         )
@@ -345,7 +346,7 @@ class DbmlRenderer:
         )
         svg.append("</linearGradient></defs>")
 
-        clip_id = f"clip-{table_hash}"
+        clip_id = self._sid(f"clip-{table_hash}")
         svg.append(
             f'<defs><clipPath id="{clip_id}"><rect x="{x}" y="{y}" width="{width}" height="44" rx="8"/></clipPath></defs>'
         )
@@ -546,17 +547,17 @@ class DbmlRenderer:
         marker_start = ""
         marker_end = ""
         if ref.type == ">":
-            marker_start = "url(#arrow-optional-start)"
-            marker_end = "url(#arrow-many-end)"
+            marker_start = f"url(#{self._sid('arrow-optional-start')})"
+            marker_end = f"url(#{self._sid('arrow-many-end')})"
         elif ref.type == "<":
-            marker_start = "url(#arrow-many-start)"
-            marker_end = "url(#arrow-one-end)"
+            marker_start = f"url(#{self._sid('arrow-many-start')})"
+            marker_end = f"url(#{self._sid('arrow-one-end')})"
         elif ref.type == "-":
-            marker_start = "url(#arrow-one-start)"
-            marker_end = "url(#arrow-one-end)"
+            marker_start = f"url(#{self._sid('arrow-one-start')})"
+            marker_end = f"url(#{self._sid('arrow-one-end')})"
         elif ref.type == "<>":
-            marker_start = "url(#arrow-many-start)"
-            marker_end = "url(#arrow-many-end)"
+            marker_start = f"url(#{self._sid('arrow-many-start')})"
+            marker_end = f"url(#{self._sid('arrow-many-end')})"
 
         line_color = self.colors["line_color"]
 
@@ -577,6 +578,9 @@ class DbmlRenderer:
         svg.append("</g>")
 
         return "".join(svg), side_to
+
+    def _sid(self, name: str) -> str:
+        return f"{name}-{getattr(self, '_diagram_id', '')}"
 
     def _escape_html(self, text: str) -> str:
         return (
