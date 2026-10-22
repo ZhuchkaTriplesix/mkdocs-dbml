@@ -86,7 +86,8 @@ class DbmlRenderer:
 
         html_parts = [
             "<!-- dbml-styles -->",
-            f'<div class="dbml-diagram-wrapper" id="dbml-{diagram_id}">',
+            f'<div class="dbml-diagram-wrapper" id="dbml-{diagram_id}" '
+            f'style="--dbml-bg:{self.colors["bg_color"]};--dbml-border:{self.colors["border_color"]}">',
         ]
         html_parts.append(
             '<div class="dbml-controls">'

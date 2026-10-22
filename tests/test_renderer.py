@@ -330,3 +330,9 @@ def test_field_text_has_semantic_classes():
     assert 'class="dbml-field-name is-pk"' in html
     assert 'class="dbml-field-name is-fk"' in html
     assert 'class="dbml-field-type"' in html
+
+
+def test_wrapper_background_follows_theme():
+    from mkdocs_dbml_plugin.config import THEMES
+    html = DbmlRenderer(theme="forest").render("Table a {\n  id integer\n}")
+    assert f'--dbml-bg:{THEMES["forest"]["bg_color"]}' in html
