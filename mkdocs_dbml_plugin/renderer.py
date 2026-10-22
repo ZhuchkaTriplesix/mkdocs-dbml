@@ -159,7 +159,7 @@ class DbmlRenderer:
 
         bg_color = self.colors["bg_color"]
         svg_parts = [
-            f'<svg class="dbml-diagram" viewBox="0 0 {max_x} {max_y}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible" data-bg="{bg_color}">'
+            f'<svg class="dbml-diagram" role="img" aria-label="Database diagram with {len(parsed.tables)} tables" viewBox="0 0 {max_x} {max_y}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible" data-bg="{bg_color}">'
         ]
 
         line_color = self.colors["line_color"]
@@ -348,7 +348,8 @@ class DbmlRenderer:
         group_name = self._table_to_group.get(table.name)
         group_attr = f' data-group="{self._escape_html(group_name)}"' if group_name else ""
         svg.append(
-            f'<g class="dbml-table-group" data-table="{self._escape_html(table.name)}"{group_attr}>'
+            f'<g class="dbml-table-group" data-table="{self._escape_html(table.name)}"{group_attr} '
+            f'tabindex="0" role="group" aria-label="Table {self._escape_html(table.name)}">'
         )
         table_tooltip = self._table_tooltip(table)
         if table_tooltip:
@@ -456,7 +457,7 @@ class DbmlRenderer:
 
         if column.pk:
             name_class += " is-pk"
-            name_color = "#fca5a5" if self.theme == "black" else ("#f87171" if is_dark else "#ef4444")
+            name_color = "#fca5a5" if self.theme == "black" else ("#f87171" if is_dark else "#b91c1c")
             svg.append(
                 f'<svg x="{icon_x}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
             )
@@ -466,7 +467,7 @@ class DbmlRenderer:
             svg.append("</svg>")
         elif is_fk:
             name_class += " is-fk"
-            name_color = "#6ee7b7" if self.theme == "black" else ("#34d399" if is_dark else "#10b981")
+            name_color = "#6ee7b7" if self.theme == "black" else ("#34d399" if is_dark else "#047857")
             svg.append(
                 f'<svg x="{icon_x}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
             )
