@@ -97,7 +97,7 @@
     padding: 0.4rem 0.6rem;
     display: flex;
     gap: 0.6rem;
-    font-size: 10px;
+    font-size: 12px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     z-index: 10;
 }
@@ -112,8 +112,8 @@
 
 .dbml-legend-item svg {
     flex-shrink: 0;
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
 }
 
 .dbml-legend-item span {
@@ -150,6 +150,15 @@
 }
 
 .dbml-table-group:hover .dbml-table-bg {
+    stroke: #6366f1;
+    stroke-width: 3;
+}
+
+.dbml-table-group:focus {
+    outline: none;
+}
+
+.dbml-table-group:focus-visible .dbml-table-bg {
     stroke: #6366f1;
     stroke-width: 3;
 }
@@ -248,7 +257,7 @@
         left: 0.5rem;
         padding: 0.25rem 0.5rem;
         gap: 0.4rem;
-        font-size: 9px;
+        font-size: 11px;
         max-width: calc(100% - 1rem);
         overflow-x: auto;
     }
@@ -438,4 +447,20 @@
 [data-theme="dark"] .dbml-relationship-line:hover,
 .dark .dbml-relationship-line:hover {
     filter: drop-shadow(0 4px 12px rgba(129, 140, 248, 0.6));
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+    .dbml-zoom-btn,
+    .dbml-export-btn,
+    .dbml-fullscreen-btn,
+    .dbml-hint {
+        transition: none;
+    }
+
+    .dbml-zoom-btn:hover,
+    .dbml-export-btn:hover,
+    .dbml-fullscreen-btn:hover {
+        transform: none;
+    }
 }

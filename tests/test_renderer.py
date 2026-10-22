@@ -343,3 +343,25 @@ def test_height_option_and_zoom_controls():
     assert "--dbml-height:420px" in html
     for cls in ("dbml-zoom-in-btn", "dbml-zoom-out-btn", "dbml-fit-btn"):
         assert cls in html
+
+
+def test_diagram_accessibility_attributes():
+    html = DbmlRenderer().render("Table a {\n  id integer\n}")
+    assert 'role="img"' in html
+    assert 'aria-label="Database diagram with 1 tables"' in html
+    assert 'tabindex="0" role="group" aria-label="Table a"' in html
+
+
+def test_theme_title_gradients_have_contrast():
+    from mkdocs_dbml_plugin.config import THEMES
+
+    def lum(h):
+        h = h.lstrip("#")
+        r, g, b = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+        f = lambda c: c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+
+    for name, t in THEMES.items():
+        for key in ("gradient_start", "gradient_end"):
+            ratio = 1.05 / (lum(t[key]) + 0.05)
+            assert ratio >= 4.5, (name, key, ratio)

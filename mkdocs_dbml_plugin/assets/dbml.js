@@ -398,6 +398,23 @@ function initDiagrams() {
                 MX0 = e.clientX; MY0 = e.clientY;
                 W.setPointerCapture(e.pointerId);
             });
+            td.e.addEventListener('focus', function() { if (M === 0) hl(td.n); });
+            td.e.addEventListener('blur', function() { if (M === 0) uhl(); });
+            td.e.addEventListener('keydown', function(e) {
+                var step = e.shiftKey ? 40 : 10, mx = 0, my = 0;
+                if (e.key === 'ArrowLeft') mx = -step;
+                else if (e.key === 'ArrowRight') mx = step;
+                else if (e.key === 'ArrowUp') my = -step;
+                else if (e.key === 'ArrowDown') my = step;
+                else return;
+                e.preventDefault();
+                e.stopPropagation();
+                td.dx += mx;
+                td.dy += my;
+                td.e.style.transform = 'translate(' + td.dx + 'px,' + td.dy + 'px)';
+                uc();
+                if (td.group) updateTableGroups();
+            });
             td.e.addEventListener('pointerenter', function() {
                 if (M === 0) hl(td.n);
             });
@@ -594,6 +611,15 @@ function initDiagrams() {
         bindControl('.dbml-zoom-in-btn', function() { centerZoom(1.25); });
         bindControl('.dbml-zoom-out-btn', function() { centerZoom(0.8); });
         bindControl('.dbml-fit-btn', fitToView);
+        W.setAttribute('tabindex', '0');
+        W.addEventListener('keydown', function(e) {
+            if (e.target !== W) return;
+            if (e.key === '+' || e.key === '=') centerZoom(1.25);
+            else if (e.key === '-') centerZoom(0.8);
+            else if (e.key === '0') fitToView();
+            else return;
+            e.preventDefault();
+        });
 
         function uc() {
             for (var i = 0; i < CN; i++) {
