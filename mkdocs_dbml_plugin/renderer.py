@@ -24,6 +24,25 @@ from .config import (
 )
 from .routing import route_connection, build_table_rects
 
+ICON_PK_LEGEND = (
+    "M12 2C13.1 2 14 2.9 14 4C14 4.74 13.6 5.39 13 5.73V7H14C16.76 7 19 9.24 19 12V13H21V15H19V16H21V18H19V20H17V18H15V20H13V18H11V20H9V18H7V20H5V18H3V16H5V15H3V13H5V12C5 9.24 7.24 7 10 7H11V5.73C10.4 5.39 10 4.74 10 4C10 2.9 10.9 2 12 2M12 4C11.45 4 11 4.45 11 5C11 5.55 11.45 6 12 6C12.55 6 13 5.55 13 5C13 4.45 12.55 4 12 4Z"
+)
+ICON_PK = (
+    "M12 2C13.1 2 14 2.9 14 4C14 4.74 13.6 5.39 13 5.73V7H14C16.76 7 19 9.24 19 12V13H21V15H19V16H21V18H19V20H17V18H15V20H13V18H11V20H9V18H7V20H5V18H3V16H5V15H3V13H5V12C5 9.24 7.24 7 10 7H11V5.73C10.4 5.39 10 4.74 10 4C10 2.9 10.9 2 12 2Z"
+)
+ICON_FK_LEGEND = (
+    "M10.59,13.41C11,13.8 11,14.44 10.59,14.83C10.2,15.22 9.56,15.22 9.17,14.83C7.22,12.88 7.22,9.71 9.17,7.76V7.76L12.71,4.22C14.66,2.27 17.83,2.27 19.78,4.22C21.73,6.17 21.73,9.34 19.78,11.29L18.29,12.78C18.3,11.96 18.17,11.14 17.89,10.36L18.36,9.88C19.54,8.71 19.54,6.81 18.36,5.64C17.19,4.46 15.29,4.46 14.12,5.64L10.59,9.17C9.41,10.34 9.41,12.24 10.59,13.41M13.41,9.17C13.8,8.78 14.44,8.78 14.83,9.17C16.78,11.12 16.78,14.29 14.83,16.24V16.24L11.29,19.78C9.34,21.73 6.17,21.73 4.22,19.78C2.27,17.83 2.27,14.66 4.22,12.71L5.71,11.22C5.7,12.04 5.83,12.86 6.11,13.65L5.64,14.12C4.46,15.29 4.46,17.19 5.64,18.36C6.81,19.54 8.71,19.54 9.88,18.36L13.41,14.83C14.59,13.66 14.59,11.76 13.41,10.59C13,10.2 13,9.56 13.41,9.17Z"
+)
+ICON_FK = (
+    "M10.59,13.41C11,13.8 11,14.44 10.59,14.83C10.2,15.22 9.56,15.22 9.17,14.83C7.22,12.88 7.22,9.71 9.17,7.76L12.71,4.22C14.66,2.27 17.83,2.27 19.78,4.22C21.73,6.17 21.73,9.34 19.78,11.29L18.29,12.78C18.3,11.96 18.17,11.14 17.89,10.36L18.36,9.88C19.54,8.71 19.54,6.81 18.36,5.64C17.19,4.46 15.29,4.46 14.12,5.64L10.59,9.17C9.41,10.34 9.41,12.24 10.59,13.41M13.41,9.17C13.8,8.78 14.44,8.78 14.83,9.17C16.78,11.12 16.78,14.29 14.83,16.24L11.29,19.78C9.34,21.73 6.17,21.73 4.22,19.78C2.27,17.83 2.27,14.66 4.22,12.71L5.71,11.22C5.7,12.04 5.83,12.86 6.11,13.65L5.64,14.12C4.46,15.29 4.46,17.19 5.64,18.36C6.81,19.54 8.71,19.54 9.88,18.36L13.41,14.83C14.59,13.66 14.59,11.76 13.41,10.59C13,10.2 13,9.56 13.41,9.17Z"
+)
+ICON_NOT_NULL = (
+    "M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M11,7H13V9H11V7M11,11H13V17H11V11Z"
+)
+ICON_UNIQUE = (
+    "M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3M7,7H17V5H19V19H5V5H7V7M7.5,13.5L9,12L11,14L15.5,9.5L17,11L11,17L7.5,13.5Z"
+)
+
 
 class DbmlRenderer:
     def __init__(self, theme=DEFAULT_THEME, show_indexes=True, show_notes=True):
@@ -83,12 +102,12 @@ class DbmlRenderer:
         html_parts.append('<div class="dbml-legend">')
         html_parts.append('<div class="dbml-legend-item">')
         html_parts.append(
-            '<svg width="20" height="20" viewBox="0 0 24 24"><path fill="#ef4444" d="M12 2C13.1 2 14 2.9 14 4C14 4.74 13.6 5.39 13 5.73V7H14C16.76 7 19 9.24 19 12V13H21V15H19V16H21V18H19V20H17V18H15V20H13V18H11V20H9V18H7V20H5V18H3V16H5V15H3V13H5V12C5 9.24 7.24 7 10 7H11V5.73C10.4 5.39 10 4.74 10 4C10 2.9 10.9 2 12 2M12 4C11.45 4 11 4.45 11 5C11 5.55 11.45 6 12 6C12.55 6 13 5.55 13 5C13 4.45 12.55 4 12 4Z"/></svg>'
+            f'<svg width="20" height="20" viewBox="0 0 24 24"><path fill="#ef4444" d="{ICON_PK_LEGEND}"/></svg>'
         )
         html_parts.append("<span>Primary Key</span></div>")
         html_parts.append('<div class="dbml-legend-item">')
         html_parts.append(
-            '<svg width="20" height="20" viewBox="0 0 24 24"><path fill="#10b981" d="M10.59,13.41C11,13.8 11,14.44 10.59,14.83C10.2,15.22 9.56,15.22 9.17,14.83C7.22,12.88 7.22,9.71 9.17,7.76V7.76L12.71,4.22C14.66,2.27 17.83,2.27 19.78,4.22C21.73,6.17 21.73,9.34 19.78,11.29L18.29,12.78C18.3,11.96 18.17,11.14 17.89,10.36L18.36,9.88C19.54,8.71 19.54,6.81 18.36,5.64C17.19,4.46 15.29,4.46 14.12,5.64L10.59,9.17C9.41,10.34 9.41,12.24 10.59,13.41M13.41,9.17C13.8,8.78 14.44,8.78 14.83,9.17C16.78,11.12 16.78,14.29 14.83,16.24V16.24L11.29,19.78C9.34,21.73 6.17,21.73 4.22,19.78C2.27,17.83 2.27,14.66 4.22,12.71L5.71,11.22C5.7,12.04 5.83,12.86 6.11,13.65L5.64,14.12C4.46,15.29 4.46,17.19 5.64,18.36C6.81,19.54 8.71,19.54 9.88,18.36L13.41,14.83C14.59,13.66 14.59,11.76 13.41,10.59C13,10.2 13,9.56 13.41,9.17Z"/></svg>'
+            f'<svg width="20" height="20" viewBox="0 0 24 24"><path fill="#10b981" d="{ICON_FK_LEGEND}"/></svg>'
         )
         html_parts.append("<span>Foreign Key</span></div>")
         html_parts.append('<div class="dbml-legend-item">')
@@ -215,14 +234,9 @@ class DbmlRenderer:
                 self._table_to_group[name] = tg.name
 
         self._fk_fields = {}
-        for table in parsed.tables:
-            fk_set = set()
-            for ref in getattr(table, "_refs", []):
-                if hasattr(ref, "col1") and ref.col1:
-                    for col in ref.col1:
-                        fk_set.add(col.name)
-            if fk_set:
-                self._fk_fields[table.name] = fk_set
+        for ref in parsed.refs:
+            for col in ref.col1 or []:
+                self._fk_fields.setdefault(col.table.name, set()).add(col.name)
 
         if table_groups:
             svg_parts.append('<g class="dbml-tablegroups-layer">')
@@ -319,7 +333,7 @@ class DbmlRenderer:
 
         svg = []
 
-        group_name = getattr(self, "_table_to_group", {}).get(table.name)
+        group_name = self._table_to_group.get(table.name)
         group_attr = f' data-group="{self._escape_html(group_name)}"' if group_name else ""
         svg.append(
             f'<g class="dbml-table-group" data-table="{self._escape_html(table.name)}"{group_attr}>'
@@ -400,7 +414,7 @@ class DbmlRenderer:
         is_dark = self.theme in ("dark", "dark_gray", "black")
         name_color = "#f5f5f5" if self.theme == "black" else ("#e5e7eb" if is_dark else "#1f2937")
         type_color = "#c4b5fd" if self.theme == "black" else ("#a5b4fc" if is_dark else "#7c3aed")
-        is_fk = column.name in getattr(self, "_fk_fields", {}).get(table.name, ())
+        is_fk = column.name in self._fk_fields.get(table.name, ())
 
         tooltip_parts = [f"{column.name}: {column.type}"]
         if column.pk:
@@ -433,7 +447,7 @@ class DbmlRenderer:
                 f'<svg x="{icon_x}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
             )
             svg.append(
-                '<path fill="#ef4444" d="M12 2C13.1 2 14 2.9 14 4C14 4.74 13.6 5.39 13 5.73V7H14C16.76 7 19 9.24 19 12V13H21V15H19V16H21V18H19V20H17V18H15V20H13V18H11V20H9V18H7V20H5V18H3V16H5V15H3V13H5V12C5 9.24 7.24 7 10 7H11V5.73C10.4 5.39 10 4.74 10 4C10 2.9 10.9 2 12 2Z"/>'
+                f'<path fill="#ef4444" d="{ICON_PK}"/>'
             )
             svg.append("</svg>")
         elif is_fk:
@@ -442,7 +456,7 @@ class DbmlRenderer:
                 f'<svg x="{icon_x}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
             )
             svg.append(
-                '<path fill="#10b981" d="M10.59,13.41C11,13.8 11,14.44 10.59,14.83C10.2,15.22 9.56,15.22 9.17,14.83C7.22,12.88 7.22,9.71 9.17,7.76L12.71,4.22C14.66,2.27 17.83,2.27 19.78,4.22C21.73,6.17 21.73,9.34 19.78,11.29L18.29,12.78C18.3,11.96 18.17,11.14 17.89,10.36L18.36,9.88C19.54,8.71 19.54,6.81 18.36,5.64C17.19,4.46 15.29,4.46 14.12,5.64L10.59,9.17C9.41,10.34 9.41,12.24 10.59,13.41M13.41,9.17C13.8,8.78 14.44,8.78 14.83,9.17C16.78,11.12 16.78,14.29 14.83,16.24L11.29,19.78C9.34,21.73 6.17,21.73 4.22,19.78C2.27,17.83 2.27,14.66 4.22,12.71L5.71,11.22C5.7,12.04 5.83,12.86 6.11,13.65L5.64,14.12C4.46,15.29 4.46,17.19 5.64,18.36C6.81,19.54 8.71,19.54 9.88,18.36L13.41,14.83C14.59,13.66 14.59,11.76 13.41,10.59C13,10.2 13,9.56 13.41,9.17Z"/>'
+                f'<path fill="#10b981" d="{ICON_FK}"/>'
             )
             svg.append("</svg>")
 
@@ -468,7 +482,7 @@ class DbmlRenderer:
                 f'<svg x="{badges_x - 18}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
             )
             svg.append(
-                '<path fill="#f59e0b" d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M11,7H13V9H11V7M11,11H13V17H11V11Z"/>'
+                f'<path fill="#f59e0b" d="{ICON_NOT_NULL}"/>'
             )
             svg.append("</svg>")
             badges_x -= 22
@@ -478,7 +492,7 @@ class DbmlRenderer:
                 f'<svg x="{badges_x - 18}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
             )
             svg.append(
-                '<path fill="#3b82f6" d="M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3M7,7H17V5H19V19H5V5H7V7M7.5,13.5L9,12L11,14L15.5,9.5L17,11L11,17L7.5,13.5Z"/>'
+                f'<path fill="#3b82f6" d="{ICON_UNIQUE}"/>'
             )
             svg.append("</svg>")
 
@@ -530,7 +544,7 @@ class DbmlRenderer:
             y2_field,
             from_idx,
             to_idx,
-            getattr(self, "_table_rects_np", self._table_rects),
+            self._table_rects_np,
             gap=CONN_GAP,
             lane_offset=lane_offset,
             preferred_side_to=preferred_side_to,
@@ -584,7 +598,7 @@ class DbmlRenderer:
         return "".join(svg), side_to
 
     def _sid(self, name: str) -> str:
-        return f"{name}-{getattr(self, '_diagram_id', '')}"
+        return f"{name}-{self._diagram_id}"
 
     def _escape_html(self, text: str) -> str:
         return (
