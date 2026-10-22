@@ -25,11 +25,12 @@ class DbmlPlugin(BasePlugin):
         if theme not in THEMES:
             available = ", ".join(sorted(THEMES.keys()))
             log.warning(
-                "mkdocs-dbml: unknown theme %r, falling back to 'default'. "
+                "mkdocs-dbml: unknown theme %r, falling back to 'black'. "
                 "Available themes: %s",
                 theme,
                 available,
             )
+            self.config["theme"] = "black"
 
         js_path = Path(__file__).parent / "assets" / "dbml.js"
         css_path = Path(__file__).parent / "assets" / "dbml.css"

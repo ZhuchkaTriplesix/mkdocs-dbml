@@ -61,5 +61,8 @@ THEMES = {
 }
 
 
-def get_theme_colors(theme_name="default"):
-    return THEMES.get(theme_name, THEMES["default"])
+DEFAULT_THEME = "black"
+
+
+def get_theme_colors(theme_name=DEFAULT_THEME):
+    return THEMES.get(theme_name, THEMES[DEFAULT_THEME])

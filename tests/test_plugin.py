@@ -95,3 +95,11 @@ def test_plugin_file_path_sibling_dir_with_same_prefix_blocked(plugin, tmp_path)
     md = "```dbml\nfile: ../docs_secret/x.dbml\n```\n"
     result = plugin.on_page_markdown(md, None, {"docs_dir": str(docs)}, None)
     assert "outside docs" in result
+
+
+def test_plugin_unknown_theme_falls_back_to_black(caplog):
+    p = DbmlPlugin()
+    p.config = {"theme": "nope", "show_indexes": True, "show_notes": True}
+    p.on_config({})
+    assert p.config["theme"] == "black"
+    assert "falling back to 'black'" in caplog.text

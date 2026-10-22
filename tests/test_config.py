@@ -33,9 +33,9 @@ def test_black_theme_is_dark():
     assert colors["line_color"] == "#ffffff"
 
 
-def test_unknown_theme_falls_back_to_default():
+def test_unknown_theme_falls_back_to_black():
     colors = get_theme_colors("nonexistent")
-    assert colors == THEMES["default"]
+    assert colors == THEMES["black"]
 
 
 def test_layout_constants_are_consistent():
