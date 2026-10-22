@@ -336,3 +336,10 @@ def test_wrapper_background_follows_theme():
     from mkdocs_dbml_plugin.config import THEMES
     html = DbmlRenderer(theme="forest").render("Table a {\n  id integer\n}")
     assert f'--dbml-bg:{THEMES["forest"]["bg_color"]}' in html
+
+
+def test_height_option_and_zoom_controls():
+    html = DbmlRenderer(height=420).render("Table a {\n  id integer\n}")
+    assert "--dbml-height:420px" in html
+    for cls in ("dbml-zoom-in-btn", "dbml-zoom-out-btn", "dbml-fit-btn"):
+        assert cls in html

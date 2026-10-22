@@ -538,6 +538,63 @@ function initDiagrams() {
             svg.style.transform = 'translate(' + TX + 'px,' + TY + 'px) scale(' + S + ')';
         }, {passive: false});
 
+        function applyT() {
+            svg.style.transform = 'translate(' + TX + 'px,' + TY + 'px) scale(' + S + ')';
+        }
+
+        function zoomAt(px, py, factor) {
+            var ns = S * factor;
+            if (ns < 0.1) ns = 0.1; else if (ns > 3) ns = 3;
+            var c = ns / S;
+            TX = px - (px - TX) * c;
+            TY = py - (py - TY) * c;
+            S = ns;
+            applyT();
+        }
+
+        function fitToView() {
+            S = 1; TX = 0; TY = 0;
+            applyT();
+            var layers = svg.querySelectorAll('.dbml-tablegroups-layer, .dbml-relationships-layer, .dbml-tables-layer');
+            var wr = W.getBoundingClientRect();
+            var l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+            for (var i = 0; i < layers.length; i++) {
+                var br = layers[i].getBoundingClientRect();
+                if (!br.width && !br.height) continue;
+                if (br.left < l) l = br.left;
+                if (br.top < t) t = br.top;
+                if (br.right > r) r = br.right;
+                if (br.bottom > b) b = br.bottom;
+            }
+            if (l === Infinity || !wr.width || !wr.height) return;
+            var pad = 24;
+            var cw = r - l, ch = b - t;
+            var ns = Math.min((wr.width - 2 * pad) / cw, (wr.height - 2 * pad) / ch, 1.5);
+            if (ns < 0.1) ns = 0.1;
+            S = ns;
+            TX = wr.width / 2 - ns * ((l - wr.left) + cw / 2);
+            TY = wr.height / 2 - ns * ((t - wr.top) + ch / 2);
+            applyT();
+        }
+
+        function bindControl(sel, fn) {
+            var btn = W.querySelector(sel);
+            if (!btn) return;
+            btn.addEventListener('pointerdown', function(e) { e.stopPropagation(); });
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                fn();
+            });
+        }
+        function centerZoom(f) {
+            var r = W.getBoundingClientRect();
+            zoomAt(r.width / 2, r.height / 2, f);
+        }
+        bindControl('.dbml-zoom-in-btn', function() { centerZoom(1.25); });
+        bindControl('.dbml-zoom-out-btn', function() { centerZoom(0.8); });
+        bindControl('.dbml-fit-btn', fitToView);
+
         function uc() {
             for (var i = 0; i < CN; i++) {
                 var fi = C_fi[i], ti = C_ti[i];
@@ -774,6 +831,7 @@ function initDiagrams() {
             for (var i = 0; i < sel.length; i++) sel[i].classList.remove('selected');
         }
 
+        fitToView();
     })(wraps[wi]); }
 }
 
