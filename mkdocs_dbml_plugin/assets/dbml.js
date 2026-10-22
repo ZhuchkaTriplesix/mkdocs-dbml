@@ -553,9 +553,11 @@ function initDiagrams() {
         var hintEl = D.createElement('div');
         hintEl.className = 'dbml-hint';
         hintEl.setAttribute('aria-hidden', 'true');
-        hintEl.textContent = (/Mac|iPhone|iPad/.test(navigator.platform) ? '\u2318' : 'Ctrl') + ' + scroll to zoom';
+        var defaultHint = (/Mac|iPhone|iPad/.test(navigator.platform) ? '\u2318' : 'Ctrl') + ' + scroll to zoom';
+        hintEl.textContent = defaultHint;
         W.appendChild(hintEl);
-        function showHint() {
+        function showHint(msg) {
+            hintEl.textContent = msg || defaultHint;
             hintEl.classList.add('visible');
             clearTimeout(hintTimer);
             hintTimer = setTimeout(function() { hintEl.classList.remove('visible'); }, 1200);
@@ -629,6 +631,19 @@ function initDiagrams() {
         bindControl('.dbml-zoom-in-btn', function() { centerZoom(1.25); });
         bindControl('.dbml-zoom-out-btn', function() { centerZoom(0.8); });
         bindControl('.dbml-fit-btn', fitToView);
+        var legend = W.querySelector('.dbml-legend');
+        if (legend) {
+            legend.setAttribute('title', 'Click to collapse/expand legend');
+            legend.addEventListener('pointerdown', function(e) { e.stopPropagation(); });
+            legend.addEventListener('click', function() { legend.classList.toggle('collapsed'); });
+        }
+        W.addEventListener('dblclick', function(e) {
+            var row = e.target.closest ? e.target.closest('[data-field]') : null;
+            var grp = e.target.closest ? e.target.closest('[data-table]') : null;
+            var txt = row ? row.getAttribute('data-field') : (grp ? grp.getAttribute('data-table') : '');
+            if (!txt || !navigator.clipboard) return;
+            navigator.clipboard.writeText(txt).then(function() { showHint('Copied: ' + txt); }, function() {});
+        });
         W.setAttribute('tabindex', '0');
         W.addEventListener('keydown', function(e) {
             if (e.target !== W) return;
@@ -662,7 +677,7 @@ function initDiagrams() {
                 _sxA[2] = fL; _exA[2] = tL;
                 _sxA[3] = fL; _exA[3] = tR;
 
-                var bc = 1e18, bs = 0, be = 0, bm = 0, b_is_step = false, b_my = 0, best_j = 0;
+                var bc = 1e18, bs = 0, be = 0, best_j = 0;
 
                 for (var j = 0; j < 4; j++) {
                     var sx = _sxA[j], ex = _exA[j];
@@ -769,8 +784,7 @@ function initDiagrams() {
                     }
 
                     if (co < bc) {
-                        bc = co; bs = sx; be = ex; bm = mx;
-                        b_is_step = is_step; b_my = my; best_j = j;
+                        bc = co; bs = sx; be = ex; best_j = j;
                     }
                 }
 

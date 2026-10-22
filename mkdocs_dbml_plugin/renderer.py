@@ -61,7 +61,7 @@ class DbmlRenderer:
         parsed = PyDBML(dbml_code)
 
         if not parsed.tables:
-            return '<div class="dbml-container">No tables found</div>'
+            return '<!-- dbml-styles -->\n<div class="dbml-empty">No tables found</div>'
 
         layout_engine = GraphLayoutEngine(parsed.tables, parsed.refs)
         self.table_positions, self.table_dimensions = (
@@ -92,7 +92,8 @@ class DbmlRenderer:
             "<!-- dbml-styles -->",
             f'<div class="dbml-diagram-wrapper" id="dbml-{diagram_id}" '
             f'style="--dbml-bg:{self.colors["bg_color"]};--dbml-border:{self.colors["border_color"]};'
-            f'--dbml-height:{self.height}px">',
+            f'--dbml-height:{self.height}px;'
+            f'--dbml-line:{self.colors["line_color"]}">',
         ]
         html_parts.append(
             '<div class="dbml-controls">'

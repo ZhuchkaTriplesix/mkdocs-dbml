@@ -127,3 +127,12 @@ def test_plugin_height_option_passed_to_renderer():
     assert "--dbml-height:321px" in p.on_page_markdown(
         "```dbml\nTable a {\n  id integer\n}\n```\n", None, {"docs_dir": "docs"}, None
     )
+
+
+def test_plugin_injects_styles_for_error_only_pages(plugin):
+    plugin.on_config({})
+    md = "```dbml\nfile: missing.dbml\n```\n"
+    out = plugin.on_page_markdown(md, None, {"docs_dir": "docs"}, None)
+    assert "<!-- dbml-styles -->" in out
+    html = plugin.on_post_page("<html><head></head><body>" + out + "</body></html>", None, {})
+    assert "<style>" in html and ".dbml-error" in html
