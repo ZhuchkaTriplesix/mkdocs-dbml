@@ -134,21 +134,38 @@ function initDiagrams() {
             return { clone: clone, vw: vw, vh: vh };
         }
 
+        function exportName(ext) {
+            var seg = (location.pathname.split('/').filter(Boolean).pop() || 'diagram').replace(/\.[a-z0-9]+$/i, '');
+            return seg.replace(/[^\w.-]+/g, '-') + '-' + (W.id || 'dbml') + '.' + ext;
+        }
+        function saveBlob(blob, name) {
+            var url = URL.createObjectURL(blob);
+            var a = D.createElement('a');
+            a.href = url;
+            a.download = name;
+            D.body.appendChild(a);
+            a.click();
+            D.body.removeChild(a);
+            setTimeout(function() { URL.revokeObjectURL(url); }, 10000);
+        }
+        function exportFailed(btn, err) {
+            if (window.console) console.error('mkdocs-dbml: export failed', err);
+            var old = btn.getAttribute('title');
+            btn.setAttribute('title', 'Export failed');
+            setTimeout(function() { btn.setAttribute('title', old); }, 3000);
+        }
+
         var exportSvgBtn = W.querySelector('.dbml-export-svg-btn');
         if (exportSvgBtn) {
             exportSvgBtn.addEventListener('pointerdown', function(e) { e.stopPropagation(); });
             exportSvgBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 e.preventDefault();
-                var r = prepareExportClone();
-                var s = new XMLSerializer().serializeToString(r.clone);
-                var blob = new Blob([s], { type: 'image/svg+xml;charset=utf-8' });
-                var url = URL.createObjectURL(blob);
-                var a = D.createElement('a');
-                a.href = url;
-                a.download = 'diagram.svg';
-                a.click();
-                URL.revokeObjectURL(url);
+                try {
+                    var r = prepareExportClone();
+                    var s = new XMLSerializer().serializeToString(r.clone);
+                    saveBlob(new Blob([s], { type: 'image/svg+xml;charset=utf-8' }), exportName('svg'));
+                } catch (err) { exportFailed(exportSvgBtn, err); }
             });
         }
         var exportPngBtn = W.querySelector('.dbml-export-png-btn');
@@ -157,26 +174,30 @@ function initDiagrams() {
             exportPngBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 e.preventDefault();
-                var r = prepareExportClone();
-                var scale = 2;
-                var svgStr = new XMLSerializer().serializeToString(r.clone);
-                var dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
-                var img = new Image();
-                img.onload = function() {
-                    var canvas = D.createElement('canvas');
-                    canvas.width = r.vw * scale;
-                    canvas.height = r.vh * scale;
-                    var ctx = canvas.getContext('2d');
-                    ctx.fillStyle = svg.getAttribute('data-bg') || '#000';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.drawImage(img, 0, 0, r.vw * scale, r.vh * scale);
-                    var pngUrl = canvas.toDataURL('image/png');
-                    var a = D.createElement('a');
-                    a.href = pngUrl;
-                    a.download = 'diagram.png';
-                    a.click();
-                };
-                img.src = dataUrl;
+                try {
+                    var r = prepareExportClone();
+                    var scale = Math.min(2, 8192 / r.vw, 8192 / r.vh);
+                    var svgStr = new XMLSerializer().serializeToString(r.clone);
+                    var dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+                    var img = new Image();
+                    img.onload = function() {
+                        try {
+                            var canvas = D.createElement('canvas');
+                            canvas.width = Math.round(r.vw * scale);
+                            canvas.height = Math.round(r.vh * scale);
+                            var ctx = canvas.getContext('2d');
+                            ctx.fillStyle = svg.getAttribute('data-bg') || '#000';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            canvas.toBlob(function(blob) {
+                                if (blob) saveBlob(blob, exportName('png'));
+                                else exportFailed(exportPngBtn, 'toBlob returned null');
+                            }, 'image/png');
+                        } catch (err) { exportFailed(exportPngBtn, err); }
+                    };
+                    img.onerror = function(err) { exportFailed(exportPngBtn, err); };
+                    img.src = dataUrl;
+                } catch (err) { exportFailed(exportPngBtn, err); }
             });
         }
 
