@@ -1,8 +1,8 @@
 .dbml-diagram-wrapper {
     margin: 2rem 0;
-    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    background: var(--dbml-bg, linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%));
     border-radius: 16px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--dbml-border, #e5e7eb);
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
     position: relative;
@@ -251,11 +251,6 @@
 }
 
 @media (prefers-color-scheme: dark) {
-    :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-diagram-wrapper {
-        background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-        border-color: #374151;
-    }
-    
     :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-legend {
         background: rgba(31, 41, 55, 0.95);
         backdrop-filter: blur(10px);
@@ -323,13 +318,6 @@
     :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-relationship-line:hover {
         filter: drop-shadow(0 4px 12px rgba(129, 140, 248, 0.6));
     }
-}
-
-[data-md-color-scheme="slate"] .dbml-diagram-wrapper,
-[data-theme="dark"] .dbml-diagram-wrapper,
-.dark .dbml-diagram-wrapper {
-    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-    border-color: #374151;
 }
 
 [data-md-color-scheme="slate"] .dbml-legend,
