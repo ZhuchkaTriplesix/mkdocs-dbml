@@ -271,3 +271,28 @@ def test_avoid_cutting_through_table_interior():
 
 
 
+
+
+NOTES_INDEXES_DBML = """
+Table users {
+  id integer [pk, note: 'primary id']
+  email varchar [unique]
+  Note: 'Users table'
+  indexes {
+    email [unique]
+  }
+}
+"""
+
+
+def test_notes_and_indexes_in_tooltips():
+    html = DbmlRenderer().render(NOTES_INDEXES_DBML)
+    assert "NOTE: Users table" in html
+    assert "NOTE: primary id" in html
+    assert "INDEX (email)" in html
+
+
+def test_notes_and_indexes_can_be_disabled():
+    html = DbmlRenderer(show_indexes=False, show_notes=False).render(NOTES_INDEXES_DBML)
+    assert "NOTE:" not in html
+    assert "INDEX (" not in html
