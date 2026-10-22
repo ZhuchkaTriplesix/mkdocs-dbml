@@ -296,3 +296,22 @@ def test_notes_and_indexes_can_be_disabled():
     html = DbmlRenderer(show_indexes=False, show_notes=False).render(NOTES_INDEXES_DBML)
     assert "NOTE:" not in html
     assert "INDEX (" not in html
+
+
+def test_svg_ids_unique_across_diagrams():
+    import re
+    a = DbmlRenderer().render("Table a {\n  id integer\n}")
+    b = DbmlRenderer().render("Table b {\n  id integer\n}")
+    ids_a = set(re.findall(r'\bid="([^"]+)"', a)) - {re.search(r'id="(dbml-[^"]+)"', a).group(1)}
+    ids_b = set(re.findall(r'\bid="([^"]+)"', b)) - {re.search(r'id="(dbml-[^"]+)"', b).group(1)}
+    assert ids_a and not (ids_a & ids_b)
+
+
+def test_url_refs_resolve_to_defined_ids():
+    import re
+    html = DbmlRenderer().render(SIMPLE) if "SIMPLE" in globals() else DbmlRenderer().render(
+        "Table a {\n  id integer [pk]\n}\nTable b {\n  aid integer [ref: > a.id]\n}"
+    )
+    defined = set(re.findall(r'\bid="([^"]+)"', html))
+    for ref in re.findall(r'url\(#([^)]+)\)', html):
+        assert ref in defined, ref
