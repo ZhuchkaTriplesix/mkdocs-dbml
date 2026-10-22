@@ -120,8 +120,8 @@ class DbmlPlugin(BasePlugin):
     def on_post_page(self, output, page, config):
         if "<!-- dbml-styles -->" not in output:
             return output
-        css = getattr(self, "_css_content", None) or DbmlRenderer.get_css(self.config["theme"])
-        js = getattr(self, "_js_content", "")
+        css = self._css_content
+        js = self._js_content
         output = output.replace("</head>", f"<style>{css}</style></head>")
         output = output.replace("</body>", f"<script>{js}</script></body>")
         output = output.replace("<!-- dbml-styles -->", "")
