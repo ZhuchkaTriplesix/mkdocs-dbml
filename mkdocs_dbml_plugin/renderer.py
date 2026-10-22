@@ -320,6 +320,9 @@ class DbmlRenderer:
         svg.append(
             f'<g class="dbml-table-group" data-table="{self._escape_html(table.name)}"{group_attr}>'
         )
+        table_tooltip = self._table_tooltip(table)
+        if table_tooltip:
+            svg.append(f"<title>{self._escape_html(table_tooltip)}</title>")
 
         is_dark = self.theme in ("dark", "dark_gray", "black")
         table_fill = self.colors["bg_color"] if is_dark else "white"
@@ -376,6 +379,18 @@ class DbmlRenderer:
 
         return "\n".join(svg)
 
+    def _table_tooltip(self, table) -> str:
+        lines = []
+        if self.show_notes and getattr(table, "note", None):
+            lines.append(f"NOTE: {table.note}")
+        if self.show_indexes:
+            for index in getattr(table, "indexes", None) or []:
+                cols = ", ".join(getattr(s, "name", str(s)) for s in index.subjects)
+                flags = [f for f, on in (("pk", index.pk), ("unique", index.unique)) if on]
+                suffix = f" [{', '.join(flags)}]" if flags else ""
+                lines.append(f"INDEX ({cols}){suffix}")
+        return "\n".join(lines)
+
     def _render_svg_field(self, column, x, y, width, table) -> str:
         svg = []
         is_dark = self.theme in ("dark", "dark_gray", "black")
@@ -392,6 +407,8 @@ class DbmlRenderer:
             tooltip_parts.append("UNIQUE")
         if column.default:
             tooltip_parts.append(f"DEFAULT: {column.default}")
+        if self.show_notes and getattr(column, "note", None):
+            tooltip_parts.append(f"NOTE: {column.note}")
         tooltip = " | ".join(tooltip_parts)
 
         svg.append(
