@@ -97,14 +97,14 @@ class DbmlRenderer:
         html_parts.append("<span>Unique</span></div>")
         html_parts.append("</div>")
 
-        svg_content = self._render_svg_diagram(parsed)
+        svg_content = self._render_svg_diagram(parsed, diagram_id)
         html_parts.append(svg_content)
 
         html_parts.append("</div>")
 
         return "\n".join(html_parts)
 
-    def _render_svg_diagram(self, parsed) -> str:
+    def _render_svg_diagram(self, parsed, diagram_id: str) -> str:
         max_x = (
             max(
                 pos[0] + self.table_dimensions[name][0]
@@ -130,7 +130,7 @@ class DbmlRenderer:
         svg_parts.append("<defs>")
 
         svg_parts.append(
-            '<marker id="arrow-one-start" viewBox="0 0 10 14" markerWidth="10" markerHeight="14"'
+            f'<marker id="{diagram_id}-arrow-one-start" viewBox="0 0 10 14" markerWidth="10" markerHeight="14"'
             ' refX="0" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
         )
         svg_parts.append(
@@ -139,7 +139,7 @@ class DbmlRenderer:
         svg_parts.append("</marker>")
 
         svg_parts.append(
-            '<marker id="arrow-one-end" viewBox="0 0 10 14" markerWidth="10" markerHeight="14"'
+            f'<marker id="{diagram_id}-arrow-one-end" viewBox="0 0 10 14" markerWidth="10" markerHeight="14"'
             ' refX="10" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
         )
         svg_parts.append(
@@ -148,7 +148,7 @@ class DbmlRenderer:
         svg_parts.append("</marker>")
 
         svg_parts.append(
-            '<marker id="arrow-many-start" viewBox="0 0 16 14" markerWidth="16" markerHeight="14"'
+            f'<marker id="{diagram_id}-arrow-many-start" viewBox="0 0 16 14" markerWidth="16" markerHeight="14"'
             ' refX="0" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
         )
         svg_parts.append(
@@ -158,7 +158,7 @@ class DbmlRenderer:
         svg_parts.append("</marker>")
 
         svg_parts.append(
-            '<marker id="arrow-many-end" viewBox="0 0 16 14" markerWidth="16" markerHeight="14"'
+            f'<marker id="{diagram_id}-arrow-many-end" viewBox="0 0 16 14" markerWidth="16" markerHeight="14"'
             ' refX="16" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
         )
         svg_parts.append(
@@ -168,7 +168,7 @@ class DbmlRenderer:
         svg_parts.append("</marker>")
 
         svg_parts.append(
-            '<marker id="arrow-optional-start" viewBox="0 0 14 14" markerWidth="14" markerHeight="14"'
+            f'<marker id="{diagram_id}-arrow-optional-start" viewBox="0 0 14 14" markerWidth="14" markerHeight="14"'
             ' refX="0" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
         )
         svg_parts.append(
@@ -177,7 +177,7 @@ class DbmlRenderer:
         svg_parts.append("</marker>")
 
         svg_parts.append(
-            '<marker id="arrow-optional-end" viewBox="0 0 14 14" markerWidth="14" markerHeight="14"'
+            f'<marker id="{diagram_id}-arrow-optional-end" viewBox="0 0 14 14" markerWidth="14" markerHeight="14"'
             ' refX="14" refY="7" orient="auto" markerUnits="userSpaceOnUse">'
         )
         svg_parts.append(
@@ -185,13 +185,13 @@ class DbmlRenderer:
         )
         svg_parts.append("</marker>")
 
-        svg_parts.append('<filter id="shadow">')
+        svg_parts.append(f'<filter id="{diagram_id}-shadow">')
         svg_parts.append(
             '<feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.15"/>'
         )
         svg_parts.append("</filter>")
 
-        svg_parts.append('<filter id="glow">')
+        svg_parts.append(f'<filter id="{diagram_id}-glow">')
         svg_parts.append('<feGaussianBlur stdDeviation="2" result="coloredBlur"/>')
         svg_parts.append(
             '<feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>'
@@ -248,7 +248,10 @@ class DbmlRenderer:
                     lane_idx = 0
                 lane_offset = lane_idx * 14.0
                 rel_svg, side_to = self._render_relationship_line(
-                    ref, lane_offset=lane_offset, preferred_side_to=pref_side
+                    ref,
+                    lane_offset=lane_offset,
+                    preferred_side_to=pref_side,
+                    diagram_id=diagram_id,
                 )
                 if target_key and side_to:
                     target_field_sides[target_key] = side_to
@@ -258,7 +261,7 @@ class DbmlRenderer:
 
         svg_parts.append('<g class="dbml-tables-layer">')
         for table in parsed.tables:
-            svg_parts.append(self._render_svg_table(table))
+            svg_parts.append(self._render_svg_table(table, diagram_id))
         svg_parts.append("</g>")
 
         svg_parts.append("</svg>")
@@ -307,7 +310,7 @@ class DbmlRenderer:
         svg.append("</g>")
         return "".join(svg)
 
-    def _render_svg_table(self, table) -> str:
+    def _render_svg_table(self, table, diagram_id: str) -> str:
         x, y = self.table_positions[table.name]
         width, height = self.table_dimensions[table.name]
 
@@ -324,10 +327,15 @@ class DbmlRenderer:
         table_stroke = self.colors["border_color"] if is_dark else "#e5e7eb"
         svg.append(f'<rect x="{x}" y="{y}" width="{width}" height="{height}" ')
         svg.append(
-            f'class="dbml-table-bg" fill="{table_fill}" stroke="{table_stroke}" stroke-width="2" rx="8" filter="url(#shadow)"/>'
+            f'class="dbml-table-bg" fill="{table_fill}" stroke="{table_stroke}" stroke-width="2" rx="8" filter="url(#{diagram_id}-shadow)"/>'
         )
 
-        table_hash = hashlib.sha256(table.name.encode()).hexdigest()[:16]
+        # The hash covers the diagram as well as the table name, so two
+        # diagrams that each declare a table of the same name do not end up
+        # sharing a gradient or clip id on one page.
+        table_hash = hashlib.sha256(
+            f"{diagram_id}:{table.name}".encode()
+        ).hexdigest()[:16]
         gradient_id = f"gradient-{table_hash}"
         svg.append(
             f'<defs><linearGradient id="{gradient_id}" x1="0%" y1="0%" x2="100%" y2="0%">'
@@ -465,6 +473,7 @@ class DbmlRenderer:
     def _render_relationship_line(
         self,
         ref,
+        diagram_id: str,
         lane_offset: float = 0.0,
         preferred_side_to: Optional[str] = None,
     ) -> tuple[str, str]:
@@ -527,17 +536,17 @@ class DbmlRenderer:
         marker_start = ""
         marker_end = ""
         if ref.type == ">":
-            marker_start = "url(#arrow-optional-start)"
-            marker_end = "url(#arrow-many-end)"
+            marker_start = f"url(#{diagram_id}-arrow-optional-start)"
+            marker_end = f"url(#{diagram_id}-arrow-many-end)"
         elif ref.type == "<":
-            marker_start = "url(#arrow-many-start)"
-            marker_end = "url(#arrow-one-end)"
+            marker_start = f"url(#{diagram_id}-arrow-many-start)"
+            marker_end = f"url(#{diagram_id}-arrow-one-end)"
         elif ref.type == "-":
-            marker_start = "url(#arrow-one-start)"
-            marker_end = "url(#arrow-one-end)"
+            marker_start = f"url(#{diagram_id}-arrow-one-start)"
+            marker_end = f"url(#{diagram_id}-arrow-one-end)"
         elif ref.type == "<>":
-            marker_start = "url(#arrow-many-start)"
-            marker_end = "url(#arrow-many-end)"
+            marker_start = f"url(#{diagram_id}-arrow-many-start)"
+            marker_end = f"url(#{diagram_id}-arrow-many-end)"
 
         line_color = self.colors["line_color"]
 

@@ -1,5 +1,7 @@
 """Tests for DbmlRenderer."""
 
+import re
+
 import pytest
 from mkdocs_dbml_plugin.renderer import DbmlRenderer
 
@@ -263,6 +265,79 @@ def test_avoid_cutting_through_table_interior():
             hy = y1
             if 102.0 < hy < 338.0:
                 assert not (min(x1, x2) < 538.0 and max(x1, x2) > 242.0)
+
+
+# Two different diagrams that both declare a table named "users". Their content
+# hashes differ, but the old table-name hash would have been identical.
+DIAGRAM_A = """\
+Table users {
+  id integer [primary key]
+  username varchar(50) [not null]
+}
+
+Table posts {
+  id integer [primary key]
+  user_id integer [ref: > users.id]
+  title varchar(200)
+}
+"""
+
+DIAGRAM_B = """\
+Table users {
+  id integer [primary key]
+  email varchar(100)
+}
+
+Table comments {
+  id integer [primary key]
+  user_id integer [ref: > users.id]
+  body text
+}
+"""
+
+
+def _svg_ids(html: str) -> list[str]:
+    return re.findall(r'id="([^"]+)"', html)
+
+
+def _svg_refs(html: str) -> list[str]:
+    return re.findall(r"url\(#([^)]+)\)", html)
+
+
+def test_two_diagrams_on_one_page_share_no_svg_ids():
+    r = DbmlRenderer(theme="default")
+    ids_a = set(_svg_ids(r.render(DIAGRAM_A)))
+    ids_b = set(_svg_ids(r.render(DIAGRAM_B)))
+
+    shared = sorted(ids_a & ids_b)
+    assert shared == [], f"SVG ids collide across diagrams: {shared}"
+
+
+def test_svg_ids_are_scoped_by_the_diagram_id():
+    import hashlib
+
+    diagram_id = hashlib.sha256(DIAGRAM_A.encode()).hexdigest()[:16]
+    html = DbmlRenderer(theme="default").render(DIAGRAM_A)
+
+    for name in ("shadow", "glow", "arrow-one-start", "arrow-many-end"):
+        assert f'id="{diagram_id}-{name}"' in html
+        assert f'id="{name}"' not in html
+
+
+def test_every_svg_reference_resolves_inside_its_own_diagram():
+    r = DbmlRenderer(theme="default")
+    for dbml in (DIAGRAM_A, DIAGRAM_B):
+        html = r.render(dbml)
+        unresolved = set(_svg_refs(html)) - set(_svg_ids(html))
+        assert unresolved == set(), f"dangling svg references: {sorted(unresolved)}"
+
+
+def test_single_diagram_has_no_duplicate_svg_ids():
+    html = DbmlRenderer(theme="default").render(DIAGRAM_A)
+    ids = _svg_ids(html)
+    duplicates = sorted({i for i in ids if ids.count(i) > 1})
+
+    assert duplicates == [], f"duplicate ids inside one diagram: {duplicates}"
 
 
 
