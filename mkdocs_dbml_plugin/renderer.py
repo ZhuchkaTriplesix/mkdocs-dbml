@@ -414,6 +414,7 @@ class DbmlRenderer:
         is_dark = self.theme in ("dark", "dark_gray", "black")
         name_color = "#f5f5f5" if self.theme == "black" else ("#e5e7eb" if is_dark else "#1f2937")
         type_color = "#c4b5fd" if self.theme == "black" else ("#a5b4fc" if is_dark else "#7c3aed")
+        name_class = "dbml-field-name"
         is_fk = column.name in self._fk_fields.get(table.name, ())
 
         tooltip_parts = [f"{column.name}: {column.type}"]
@@ -442,6 +443,7 @@ class DbmlRenderer:
         type_center_x = x + (150 + width - 60) / 2
 
         if column.pk:
+            name_class += " is-pk"
             name_color = "#fca5a5" if self.theme == "black" else ("#f87171" if is_dark else "#ef4444")
             svg.append(
                 f'<svg x="{icon_x}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
@@ -451,6 +453,7 @@ class DbmlRenderer:
             )
             svg.append("</svg>")
         elif is_fk:
+            name_class += " is-fk"
             name_color = "#6ee7b7" if self.theme == "black" else ("#34d399" if is_dark else "#10b981")
             svg.append(
                 f'<svg x="{icon_x}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
@@ -461,7 +464,7 @@ class DbmlRenderer:
             svg.append("</svg>")
 
         svg.append(
-            f'<text x="{name_center_x}" y="{y}" text-anchor="middle" font-size="13" fill="{name_color}" font-weight="600" font-family="monospace">'
+            f'<text class="{name_class}" x="{name_center_x}" y="{y}" text-anchor="middle" font-size="13" fill="{name_color}" font-weight="600" font-family="monospace">'
         )
         svg.append(f"{self._escape_html(column.name)}</text>")
 
@@ -471,7 +474,7 @@ class DbmlRenderer:
             type_text = type_text[: max(max_chars - 3, 1)] + "..."
 
         svg.append(
-            f'<text x="{type_center_x}" y="{y}" text-anchor="middle" font-size="11" fill="{type_color}" font-weight="600" font-family="monospace">'
+            f'<text class="dbml-field-type" x="{type_center_x}" y="{y}" text-anchor="middle" font-size="11" fill="{type_color}" font-weight="600" font-family="monospace">'
         )
         svg.append(f"{self._escape_html(type_text)}</text>")
 

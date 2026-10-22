@@ -321,3 +321,12 @@ def test_long_column_type_not_truncated():
     html = DbmlRenderer().render("Table a {\n  name varchar(255)\n  amount numeric(12,2)\n}")
     assert "varchar(255)" in html
     assert "numeric(12,2)" in html
+
+
+def test_field_text_has_semantic_classes():
+    html = DbmlRenderer().render(
+        "Table a {\n  id integer [pk]\n}\nTable b {\n  aid integer [ref: > a.id]\n}"
+    )
+    assert 'class="dbml-field-name is-pk"' in html
+    assert 'class="dbml-field-name is-fk"' in html
+    assert 'class="dbml-field-type"' in html

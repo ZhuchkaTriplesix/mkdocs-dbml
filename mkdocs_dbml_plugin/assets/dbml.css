@@ -296,8 +296,20 @@
         fill: white;
     }
     
-    :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-diagram text {
+    :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-field-name {
         fill: #e5e7eb;
+    }
+
+    :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-field-name.is-pk {
+        fill: #f87171;
+    }
+
+    :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-field-name.is-fk {
+        fill: #34d399;
+    }
+
+    :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-field-type {
+        fill: #a5b4fc;
     }
     
     :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-relationship-line {
@@ -382,10 +394,28 @@
     fill: white;
 }
 
-[data-md-color-scheme="slate"] .dbml-diagram text,
-[data-theme="dark"] .dbml-diagram text,
-.dark .dbml-diagram text {
+[data-md-color-scheme="slate"] .dbml-field-name,
+[data-theme="dark"] .dbml-field-name,
+.dark .dbml-field-name {
     fill: #e5e7eb;
+}
+
+[data-md-color-scheme="slate"] .dbml-field-name.is-pk,
+[data-theme="dark"] .dbml-field-name.is-pk,
+.dark .dbml-field-name.is-pk {
+    fill: #f87171;
+}
+
+[data-md-color-scheme="slate"] .dbml-field-name.is-fk,
+[data-theme="dark"] .dbml-field-name.is-fk,
+.dark .dbml-field-name.is-fk {
+    fill: #34d399;
+}
+
+[data-md-color-scheme="slate"] .dbml-field-type,
+[data-theme="dark"] .dbml-field-type,
+.dark .dbml-field-type {
+    fill: #a5b4fc;
 }
 
 [data-md-color-scheme="slate"] .dbml-relationship-line,
