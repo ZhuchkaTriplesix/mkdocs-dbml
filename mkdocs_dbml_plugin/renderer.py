@@ -18,6 +18,9 @@ from .config import (
     TABLE_GROUP_PADDING,
     SVG_PADDING,
     CONN_GAP,
+    TYPE_AREA_START,
+    TYPE_AREA_RIGHT_PAD,
+    TYPE_CHAR_WIDTH,
 )
 from .routing import route_connection, build_table_rects
 
@@ -449,8 +452,9 @@ class DbmlRenderer:
         svg.append(f"{self._escape_html(column.name)}</text>")
 
         type_text = str(column.type)
-        if len(type_text) > 15:
-            type_text = type_text[:12] + "..."
+        max_chars = int((width - TYPE_AREA_START - TYPE_AREA_RIGHT_PAD) / TYPE_CHAR_WIDTH)
+        if len(type_text) > max_chars:
+            type_text = type_text[: max(max_chars - 3, 1)] + "..."
 
         svg.append(
             f'<text x="{type_center_x}" y="{y}" text-anchor="middle" font-size="11" fill="{type_color}" font-weight="600" font-family="monospace">'
