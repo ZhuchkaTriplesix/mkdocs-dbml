@@ -8,7 +8,7 @@ from pathlib import Path
 from mkdocs.plugins import BasePlugin
 from mkdocs.config import config_options
 from .renderer import DbmlRenderer
-from .config import THEMES
+from .config import THEMES, DEFAULT_HEIGHT
 
 log = logging.getLogger("mkdocs.plugins.dbml")
 
@@ -18,6 +18,7 @@ class DbmlPlugin(BasePlugin):
         ("theme", config_options.Type(str, default="black")),
         ("show_indexes", config_options.Type(bool, default=True)),
         ("show_notes", config_options.Type(bool, default=True)),
+        ("height", config_options.Type(int, default=DEFAULT_HEIGHT)),
     )
 
     def on_config(self, config):
@@ -40,6 +41,7 @@ class DbmlPlugin(BasePlugin):
             theme=self.config["theme"],
             show_indexes=self.config["show_indexes"],
             show_notes=self.config["show_notes"],
+            height=self.config.get("height", DEFAULT_HEIGHT),
         )
         return config
 
@@ -100,6 +102,7 @@ class DbmlPlugin(BasePlugin):
                     theme=self.config["theme"],
                     show_indexes=self.config["show_indexes"],
                     show_notes=self.config["show_notes"],
+                    height=self.config.get("height", DEFAULT_HEIGHT),
                 )
             try:
                 return self._indent(renderer.render(dbml_code), indent)

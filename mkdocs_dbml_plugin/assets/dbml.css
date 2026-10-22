@@ -8,7 +8,7 @@
     position: relative;
     cursor: grab;
     user-select: none;
-    height: 600px;
+    height: var(--dbml-height, 600px);
 }
 
 .dbml-hint {
@@ -42,6 +42,7 @@
     pointer-events: none;
 }
 
+.dbml-zoom-btn,
 .dbml-export-btn,
 .dbml-fullscreen-btn {
     pointer-events: auto;
@@ -60,6 +61,7 @@
     color: #4b5563;
 }
 
+.dbml-zoom-btn:hover,
 .dbml-export-btn:hover,
 .dbml-fullscreen-btn:hover {
     background: #6366f1;
@@ -67,6 +69,7 @@
     transform: scale(1.05);
 }
 
+.dbml-zoom-btn:focus-visible,
 .dbml-export-btn:focus-visible,
 .dbml-fullscreen-btn:focus-visible {
     outline: 2px solid #6366f1;
@@ -223,7 +226,7 @@
 
 @media (max-width: 768px) {
     .dbml-diagram-wrapper {
-        height: 400px;
+        height: min(var(--dbml-height, 600px), 400px);
     }
     
     .dbml-controls {
@@ -232,6 +235,7 @@
         gap: 0.35rem;
     }
     
+    .dbml-zoom-btn,
     .dbml-export-btn,
     .dbml-fullscreen-btn {
         width: 32px;
@@ -261,18 +265,21 @@
     }
     
     :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-export-btn,
+    :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-zoom-btn,
     :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-fullscreen-btn {
         background: rgba(31, 41, 55, 0.95);
         color: #e5e7eb;
     }
     
     :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-export-btn:hover,
+    :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-zoom-btn:hover,
     :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-fullscreen-btn:hover {
         background: #818cf8;
         color: white;
     }
 
     :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-export-btn:focus-visible,
+    :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-zoom-btn:focus-visible,
     :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-fullscreen-btn:focus-visible {
         outline-color: #818cf8;
     }
@@ -334,8 +341,11 @@
 }
 
 [data-md-color-scheme="slate"] .dbml-export-btn,
+[data-md-color-scheme="slate"] .dbml-zoom-btn,
 [data-theme="dark"] .dbml-export-btn,
+[data-theme="dark"] .dbml-zoom-btn,
 .dark .dbml-export-btn,
+.dark .dbml-zoom-btn,
 [data-md-color-scheme="slate"] .dbml-fullscreen-btn,
 [data-theme="dark"] .dbml-fullscreen-btn,
 .dark .dbml-fullscreen-btn {
@@ -344,8 +354,11 @@
 }
 
 [data-md-color-scheme="slate"] .dbml-export-btn:hover,
+[data-md-color-scheme="slate"] .dbml-zoom-btn:hover,
 [data-theme="dark"] .dbml-export-btn:hover,
+[data-theme="dark"] .dbml-zoom-btn:hover,
 .dark .dbml-export-btn:hover,
+.dark .dbml-zoom-btn:hover,
 [data-md-color-scheme="slate"] .dbml-fullscreen-btn:hover,
 [data-theme="dark"] .dbml-fullscreen-btn:hover,
 .dark .dbml-fullscreen-btn:hover {
@@ -354,8 +367,11 @@
 }
 
 [data-md-color-scheme="slate"] .dbml-export-btn:focus-visible,
+[data-md-color-scheme="slate"] .dbml-zoom-btn:focus-visible,
 [data-theme="dark"] .dbml-export-btn:focus-visible,
+[data-theme="dark"] .dbml-zoom-btn:focus-visible,
 .dark .dbml-export-btn:focus-visible,
+.dark .dbml-zoom-btn:focus-visible,
 [data-md-color-scheme="slate"] .dbml-fullscreen-btn:focus-visible,
 [data-theme="dark"] .dbml-fullscreen-btn:focus-visible,
 .dark .dbml-fullscreen-btn:focus-visible {

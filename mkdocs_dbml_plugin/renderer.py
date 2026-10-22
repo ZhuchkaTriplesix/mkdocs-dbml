@@ -12,6 +12,7 @@ from .layout import GraphLayoutEngine
 from .config import (
     THEMES,
     DEFAULT_THEME,
+    DEFAULT_HEIGHT,
     get_theme_colors,
     FIELD_Y_START,
     ROW_HEIGHT,
@@ -45,7 +46,10 @@ ICON_UNIQUE = (
 
 
 class DbmlRenderer:
-    def __init__(self, theme=DEFAULT_THEME, show_indexes=True, show_notes=True):
+    def __init__(
+        self, theme=DEFAULT_THEME, show_indexes=True, show_notes=True, height=DEFAULT_HEIGHT
+    ):
+        self.height = int(height)
         self.theme = theme if theme in THEMES else DEFAULT_THEME
         self.show_indexes = show_indexes
         self.show_notes = show_notes
@@ -87,10 +91,17 @@ class DbmlRenderer:
         html_parts = [
             "<!-- dbml-styles -->",
             f'<div class="dbml-diagram-wrapper" id="dbml-{diagram_id}" '
-            f'style="--dbml-bg:{self.colors["bg_color"]};--dbml-border:{self.colors["border_color"]}">',
+            f'style="--dbml-bg:{self.colors["bg_color"]};--dbml-border:{self.colors["border_color"]};'
+            f'--dbml-height:{self.height}px">',
         ]
         html_parts.append(
             '<div class="dbml-controls">'
+            '<button type="button" class="dbml-zoom-btn dbml-zoom-in-btn" title="Zoom in" aria-label="Zoom in">'
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>'
+            '<button type="button" class="dbml-zoom-btn dbml-zoom-out-btn" title="Zoom out" aria-label="Zoom out">'
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>'
+            '<button type="button" class="dbml-zoom-btn dbml-fit-btn" title="Fit to view" aria-label="Fit to view">'
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg></button>'
             '<button type="button" class="dbml-export-btn dbml-export-svg-btn" title="Export SVG" aria-label="Export SVG">'
             '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>'
             '<button type="button" class="dbml-export-btn dbml-export-png-btn" title="Export PNG" aria-label="Export PNG">'

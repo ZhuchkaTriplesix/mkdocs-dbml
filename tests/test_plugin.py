@@ -118,3 +118,12 @@ def test_plugin_handles_indented_block(plugin):
     assert "dbml-diagram-wrapper" in result
     assert "```dbml" not in result
     assert all(l.startswith("    ") for l in result.splitlines()[1:] if l.strip())
+
+
+def test_plugin_height_option_passed_to_renderer():
+    p = DbmlPlugin()
+    p.config = {"theme": "black", "show_indexes": True, "show_notes": True, "height": 321}
+    p.on_config({})
+    assert "--dbml-height:321px" in p.on_page_markdown(
+        "```dbml\nTable a {\n  id integer\n}\n```\n", None, {"docs_dir": "docs"}, None
+    )

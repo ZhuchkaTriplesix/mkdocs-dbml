@@ -65,6 +65,7 @@ THEMES = {
 
 
 DEFAULT_THEME = "black"
+DEFAULT_HEIGHT = 600
 
 
 def get_theme_colors(theme_name=DEFAULT_THEME):
