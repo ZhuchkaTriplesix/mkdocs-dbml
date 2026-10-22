@@ -315,3 +315,9 @@ def test_url_refs_resolve_to_defined_ids():
     defined = set(re.findall(r'\bid="([^"]+)"', html))
     for ref in re.findall(r'url\(#([^)]+)\)', html):
         assert ref in defined, ref
+
+
+def test_long_column_type_not_truncated():
+    html = DbmlRenderer().render("Table a {\n  name varchar(255)\n  amount numeric(12,2)\n}")
+    assert "varchar(255)" in html
+    assert "numeric(12,2)" in html
