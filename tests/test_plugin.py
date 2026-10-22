@@ -103,3 +103,18 @@ def test_plugin_unknown_theme_falls_back_to_black(caplog):
     p.on_config({})
     assert p.config["theme"] == "black"
     assert "falling back to 'black'" in caplog.text
+
+
+def test_plugin_handles_crlf(plugin):
+    md = "# Page\r\n\r\n```dbml\r\nTable users {\r\n  id integer [pk]\r\n}\r\n```\r\n"
+    result = plugin.on_page_markdown(md, None, {"docs_dir": "docs"}, None)
+    assert "dbml-diagram-wrapper" in result
+    assert "```dbml" not in result
+
+
+def test_plugin_handles_indented_block(plugin):
+    md = '!!! note\n    ```dbml\n    Table users {\n      id integer [pk]\n    }\n    ```\n'
+    result = plugin.on_page_markdown(md, None, {"docs_dir": "docs"}, None)
+    assert "dbml-diagram-wrapper" in result
+    assert "```dbml" not in result
+    assert all(l.startswith("    ") for l in result.splitlines()[1:] if l.strip())

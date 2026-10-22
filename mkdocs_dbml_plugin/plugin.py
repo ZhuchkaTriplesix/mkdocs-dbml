@@ -43,15 +43,25 @@ class DbmlPlugin(BasePlugin):
         )
         return config
 
+    @staticmethod
+    def _indent(text, indent):
+        if not indent:
+            return text
+        return "\n".join(indent + line for line in text.split("\n"))
+
     def on_page_markdown(self, markdown, page, config, files):
-        pattern = r"```dbml\n(.*?)```"
+        pattern = r"^([ \t]*)```dbml[ \t]*\r?\n(.*?)^[ \t]*```[ \t]*\r?$"
         docs_dir = config.get("docs_dir", "docs")
 
         def replace_dbml(match):
-            raw = match.group(1)
-            if not raw:
+            indent = match.group(1)
+            raw = match.group(2)
+            if not raw.strip():
                 return '<div class="dbml-error">Empty DBML block</div>'
-            dbml_code = raw.strip()
+            dbml_code = "\n".join(
+                line[len(indent):] if line.startswith(indent) else line
+                for line in raw.replace("\r\n", "\n").split("\n")
+            ).strip()
             lines = dbml_code.split("\n")
             first = lines[0].strip() if lines else ""
 
@@ -92,7 +102,7 @@ class DbmlPlugin(BasePlugin):
                     show_notes=self.config["show_notes"],
                 )
             try:
-                return renderer.render(dbml_code)
+                return self._indent(renderer.render(dbml_code), indent)
             except (ValueError, KeyError) as e:
                 safe_msg = html_module.escape(str(e))
                 return f'<div class="dbml-error">Error parsing DBML: {safe_msg}</div>'
@@ -104,7 +114,7 @@ class DbmlPlugin(BasePlugin):
                     "</div>"
                 )
 
-        markdown = re.sub(pattern, replace_dbml, markdown, flags=re.DOTALL)
+        markdown = re.sub(pattern, replace_dbml, markdown, flags=re.DOTALL | re.MULTILINE)
         return markdown
 
     def on_post_page(self, output, page, config):
