@@ -5,11 +5,13 @@ function cssSelectorEscape(s) {
     return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
-D.addEventListener('DOMContentLoaded', function() {
+function initDiagrams() {
     var wraps = D.querySelectorAll('.dbml-diagram-wrapper');
     for (var wi = 0; wi < wraps.length; wi++) { (function(W) {
+        if (W.getAttribute('data-dbml-init')) return;
         var svg = W.querySelector('.dbml-diagram');
         if (!svg) return;
+        W.setAttribute('data-dbml-init', '1');
         var fsBtn = W.querySelector('.dbml-fullscreen-btn');
         if (fsBtn) {
             fsBtn.addEventListener('pointerdown', function(e) { e.stopPropagation(); });
@@ -773,15 +775,30 @@ D.addEventListener('DOMContentLoaded', function() {
         }
 
     })(wraps[wi]); }
-    function onFullscreenChange() {
-        var fsEl = D.fullscreenElement || D.webkitFullscreenElement;
-        var btns = D.querySelectorAll('.dbml-fullscreen-btn');
-        for (var i = 0; i < btns.length; i++) {
-            var inFs = fsEl && fsEl.contains(btns[i]);
-            btns[i].setAttribute('title', inFs ? 'Exit fullscreen (Esc)' : 'Fullscreen');
-        }
+}
+
+function onFullscreenChange() {
+    var fsEl = D.fullscreenElement || D.webkitFullscreenElement;
+    var btns = D.querySelectorAll('.dbml-fullscreen-btn');
+    for (var i = 0; i < btns.length; i++) {
+        var inFs = fsEl && fsEl.contains(btns[i]);
+        btns[i].setAttribute('title', inFs ? 'Exit fullscreen (Esc)' : 'Fullscreen');
     }
+}
+
+if (!window.__dbmlBootstrapped) {
+    window.__dbmlBootstrapped = true;
     D.addEventListener('fullscreenchange', onFullscreenChange);
     D.addEventListener('webkitfullscreenchange', onFullscreenChange);
-});
+    // Material for MkDocs with navigation.instant swaps pages without DOMContentLoaded.
+    if (window.document$ && typeof window.document$.subscribe === 'function') {
+        window.document$.subscribe(initDiagrams);
+    }
+}
+
+if (D.readyState === 'loading') {
+    D.addEventListener('DOMContentLoaded', initDiagrams);
+} else {
+    initDiagrams();
+}
 })();
