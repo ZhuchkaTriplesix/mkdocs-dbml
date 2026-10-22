@@ -12,6 +12,8 @@ from .config import THEMES, DEFAULT_HEIGHT
 
 log = logging.getLogger("mkdocs.plugins.dbml")
 
+STYLES_MARKER = "<!-- dbml-styles -->"
+
 
 class DbmlPlugin(BasePlugin):
     config_scheme = (
@@ -118,14 +120,16 @@ class DbmlPlugin(BasePlugin):
                 )
 
         markdown = re.sub(pattern, replace_dbml, markdown, flags=re.DOTALL | re.MULTILINE)
+        if 'class="dbml-error"' in markdown and STYLES_MARKER not in markdown:
+            markdown = STYLES_MARKER + "\n" + markdown
         return markdown
 
     def on_post_page(self, output, page, config):
-        if "<!-- dbml-styles -->" not in output:
+        if STYLES_MARKER not in output:
             return output
         css = self._css_content
         js = self._js_content
         output = output.replace("</head>", f"<style>{css}</style></head>")
         output = output.replace("</body>", f"<script>{js}</script></body>")
-        output = output.replace("<!-- dbml-styles -->", "")
+        output = output.replace(STYLES_MARKER, "")
         return output

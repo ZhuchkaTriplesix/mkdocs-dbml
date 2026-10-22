@@ -365,3 +365,8 @@ def test_theme_title_gradients_have_contrast():
         for key in ("gradient_start", "gradient_end"):
             ratio = 1.05 / (lum(t[key]) + 0.05)
             assert ratio >= 4.5, (name, key, ratio)
+
+
+def test_empty_schema_gets_styled_message():
+    html = DbmlRenderer().render("// nothing here")
+    assert "dbml-empty" in html and "<!-- dbml-styles -->" in html
