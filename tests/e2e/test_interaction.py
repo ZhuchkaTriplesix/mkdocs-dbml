@@ -253,7 +253,6 @@ def test_legend_collapses_on_click(wrapper):
     expect(label).to_be_visible()
 
 
-@pytest.mark.xfail(reason="dblclick retargeted by pointer capture, see #71", strict=True)
 def test_double_click_copies_field_reference(home, wrapper):
     field = wrapper.locator('[data-field="posts.user_id"]')
     field.dblclick()
@@ -273,3 +272,8 @@ def test_fullscreen_button_toggles_title(home, wrapper):
     home.evaluate("document.exitFullscreen()")
     home.wait_for_function("document.fullscreenElement === null")
     expect(btn).to_have_attribute("title", "Fullscreen")
+
+
+def test_double_click_on_table_header_copies_table_name(home, wrapper):
+    wrapper.locator('.dbml-table-group[data-table="posts"] .dbml-table-title').dblclick()
+    assert home.evaluate("navigator.clipboard.readText()") == "posts"
