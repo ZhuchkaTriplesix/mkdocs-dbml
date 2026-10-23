@@ -371,3 +371,27 @@ def test_theme_title_gradients_have_contrast():
 def test_empty_schema_gets_styled_message():
     html = DbmlRenderer().render("// nothing here")
     assert "dbml-empty" in html and "<!-- dbml-styles -->" in html
+
+
+def test_large_schema_warns(caplog):
+    import logging
+
+    from mkdocs_dbml_plugin.config import LARGE_SCHEMA_TABLES
+
+    dbml = "\n".join(
+        f"Table t{i} {{\n  id integer [pk]\n}}" for i in range(LARGE_SCHEMA_TABLES + 1)
+    )
+    with caplog.at_level(logging.WARNING, logger="mkdocs.plugins.dbml"):
+        DbmlRenderer().render(dbml)
+    assert any("splitting" in r.message for r in caplog.records)
+
+
+def test_icons_and_gradient_are_shared_not_repeated():
+    dbml = "\n".join(
+        f"Table t{i} {{\n  id integer [pk]\n  n integer [not null, unique]\n}}"
+        for i in range(10)
+    )
+    html = DbmlRenderer().render(dbml)
+    assert html.count("<linearGradient") == 1
+    assert html.count("<symbol") == 4
+    assert "<clipPath" not in html

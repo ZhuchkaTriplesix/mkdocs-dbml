@@ -252,7 +252,7 @@ Full DBML specification: [dbml.dbdiagram.io/docs](https://dbml.dbdiagram.io/docs
 - Only the DBML features supported by [pydbml](https://github.com/Vanderhoof/PyDBML) are rendered; unsupported syntax is reported as a syntax error.
 - Diagrams are laid out automatically; positions are not configurable in DBML. Drag tables in the browser to adjust (not persisted).
 - Very large schemas (hundreds of tables) increase build time and page size. Split them into several diagrams or use `TableGroup`s.
-- Each diagram embeds its own SVG; shared CSS/JS is injected once per page.
+- Each diagram embeds its own SVG (about 6–7 KB of HTML per table); shared CSS/JS is injected once per page. A warning is logged above 150 tables.
 
 ## Troubleshooting
 

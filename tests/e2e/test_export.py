@@ -26,6 +26,19 @@ def test_svg_export(home, wrapper):
     assert "<rect" in svg and 'fill="#000000"' in svg  # theme background
 
 
+def test_exported_svg_is_valid_xml_with_resolvable_icons(home, wrapper):
+    from xml.etree import ElementTree as ET
+
+    with home.expect_download() as info:
+        wrapper.locator(".dbml-export-svg-btn").click()
+    root = ET.fromstring(read_download(info.value))
+    xlink = "{http://www.w3.org/1999/xlink}href"
+    ids = {el.get("id") for el in root.iter() if el.get("id")}
+    refs = [el.get(xlink) for el in root.iter() if el.get(xlink)]
+    assert refs, "expected icon <use> references"
+    assert all(ref.lstrip("#") in ids for ref in refs)
+
+
 def test_png_export(home, wrapper):
     with home.expect_download() as info:
         wrapper.locator(".dbml-export-png-btn").click()

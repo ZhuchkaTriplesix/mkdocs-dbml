@@ -35,7 +35,7 @@ def test_text_contrast_of_table_titles_is_sufficient(wrapper):
             const rgb = s => s.match(/\\d+/g).slice(0, 3).map(Number);
             const lum = c => { const [r, g, b] = c.map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
             const title = rgb(getComputedStyle(el.querySelector('.dbml-table-title')).fill);
-            const stop = rgb(getComputedStyle(el.querySelector('stop')).stopColor);
+            const stop = rgb(getComputedStyle(el.ownerSVGElement.querySelector('stop')).stopColor);
             const [a, b] = [lum(title), lum(stop)].sort((x, y) => y - x);
             return (a + 0.05) / (b + 0.05);
         }"""
