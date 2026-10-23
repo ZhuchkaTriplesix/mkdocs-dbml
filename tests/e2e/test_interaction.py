@@ -111,7 +111,6 @@ def test_dragging_empty_canvas_pans(home, wrapper):
     assert scale_of(wrapper) == pytest.approx(scale_of(wrapper))
 
 
-@pytest.mark.xfail(reason="drag ignores viewBox scale, see #69", strict=True)
 def test_dragging_a_table_moves_it_and_reroutes_relationships(home, wrapper):
     before_box = table(wrapper, "users").bounding_box()
     before_paths = paths(wrapper)
@@ -121,10 +120,13 @@ def test_dragging_a_table_moves_it_and_reroutes_relationships(home, wrapper):
     assert after_box["x"] - before_box["x"] == pytest.approx(40, abs=2)
     assert after_box["y"] - before_box["y"] == pytest.approx(90, abs=2)
     after_paths = paths(wrapper)
-    assert after_paths != before_paths
-    # relationships that do not touch `users` keep their geometry
-    unchanged = [a == b for a, b in zip(before_paths, after_paths)]
-    assert any(unchanged) and not all(unchanged)
+    touching = wrapper.locator(".dbml-relationship-group").evaluate_all(
+        "els => els.map(e => e.dataset.from.startsWith('users.') || e.dataset.to.startsWith('users.'))"
+    )
+    assert any(touching)
+    for moved, old, new in zip(touching, before_paths, after_paths):
+        if moved:
+            assert old != new
 
 
 def test_dragging_a_grouped_table_resizes_group_box(home):
@@ -138,7 +140,6 @@ def test_dragging_a_grouped_table_resizes_group_box(home):
     assert after["height"] > before["height"] + 50
 
 
-@pytest.mark.xfail(reason="drag ignores viewBox scale, see #69", strict=True)
 def test_dragging_group_box_moves_all_members(home):
     group_wrapper = home.locator(".dbml-diagram-wrapper").nth(1)
     group_wrapper.scroll_into_view_if_needed()
@@ -206,7 +207,6 @@ def test_clicking_a_relationship_selects_it_and_its_fields(home, wrapper):
 # --- keyboard -------------------------------------------------------------
 
 
-@pytest.mark.xfail(reason="drag ignores viewBox scale, see #69", strict=True)
 def test_table_can_be_moved_with_arrow_keys(home, wrapper):
     users = table(wrapper, "users")
     users.focus()
