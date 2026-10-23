@@ -8,9 +8,9 @@ git clone https://github.com/ZhuchkaTriplesix/mkdocs-dbml.git
 cd mkdocs-dbml
 ```
 
-2. Install dependencies (optional; pip will install runtime deps):
+2. Install dev dependencies (tests, lint):
 ```bash
-pip install -r requirements.txt
+pip install -e ".[dev]"
 ```
 
 3. Install the plugin in development mode:
@@ -67,16 +67,11 @@ plugins:
       theme: black    # default; or default, ocean, sunset, forest, dark, dark_gray
       show_indexes: true
       show_notes: true
+      height: 600     # diagram height in px
 ```
 
 Diagrams include **Export** buttons (top-right): download as SVG or PNG. The exported image uses the theme background and includes all relationship lines.
 
 ## Publishing the package
 
-To publish to PyPI:
-
-```bash
-pip install build twine
-python -m build
-twine upload dist/*
-```
+Releases are automated: bump the version in `pyproject.toml` and `mkdocs_dbml_plugin/__init__.py`, add a `CHANGELOG.md` section, merge `release/vX.Y.Z` into `master` and push the `vX.Y.Z` tag. The `Release` workflow runs the tests, builds the package, publishes to PyPI and creates a GitHub Release.

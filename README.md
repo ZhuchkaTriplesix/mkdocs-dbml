@@ -1,10 +1,15 @@
 # MkDocs DBML Plugin
 
+[![PyPI](https://img.shields.io/pypi/v/mkdocs-dbml-plugin)](https://pypi.org/project/mkdocs-dbml-plugin/)
+[![Python](https://img.shields.io/pypi/pyversions/mkdocs-dbml-plugin)](https://pypi.org/project/mkdocs-dbml-plugin/)
+[![Tests](https://github.com/ZhuchkaTriplesix/mkdocs-dbml/actions/workflows/test.yml/badge.svg)](https://github.com/ZhuchkaTriplesix/mkdocs-dbml/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/github/license/ZhuchkaTriplesix/mkdocs-dbml)](LICENSE)
+
 MkDocs plugin that renders [DBML](https://dbml.dbdiagram.io/) code blocks as interactive, visual ERD (Entity-Relationship Diagram) directly in your documentation.
 
 ## Features
 
-- **Interactive SVG diagrams** — drag tables, zoom with mouse wheel (10%–300%), pan the canvas
+- **Interactive SVG diagrams** — drag tables, zoom (Ctrl/⌘ + wheel, pinch, buttons; 10%–300%), pan the canvas, fit to view
 - **Field-to-field connections** — relationship lines go from the exact FK field to the exact PK field
 - **Orthogonal routing** — lines use right-angle paths and automatically avoid overlapping tables
 - **Export** — download the diagram as SVG or PNG (theme background preserved)
@@ -13,9 +18,16 @@ MkDocs plugin that renders [DBML](https://dbml.dbdiagram.io/) code blocks as int
 - **Crow's foot notation** — classic ERD markers for one-to-one, one-to-many, many-to-many
 - **Material Design 3 icons** — PK, FK, NOT NULL, UNIQUE badges on fields
 - **7 color themes** — default, ocean, sunset, forest, dark, dark_gray, black (default theme: black)
-- **High performance** — optional Cython-compiled routing engine; pure-Python fallback
+- **Accessible** — keyboard navigation (Tab, arrows, `+`/`-`/`0`), ARIA labels, reduced-motion support
+- **Performance** — optional Cython-compiled routing engine; pure-Python fallback
 
 ## Installation
+
+### From PyPI
+
+```bash
+pip install mkdocs-dbml-plugin
+```
 
 ### From source (local project)
 
@@ -43,9 +55,12 @@ Installed automatically by `pip install`:
 
 | Package | Purpose |
 |---------|---------|
-| `mkdocs >= 1.0` | Documentation framework |
-| `numpy >= 1.20` | Layout/routing (required) |
-| `pydbml >= 1.0` | DBML parser |
+| `mkdocs >= 1.5` | Documentation framework |
+| `pydbml >= 1.0.10` | DBML parser |
+
+Optional: `pip install "mkdocs-dbml-plugin[fast]"` adds numpy/numba/Cython for faster routing on large schemas.
+
+Supported Python versions: 3.9 – 3.14.
 
 ## Quick start
 
@@ -125,11 +140,18 @@ All options are set under the `dbml` plugin entry in `mkdocs.yml`:
 ```yaml
 plugins:
   - dbml:
-      theme: black        # default; or default, ocean, sunset, forest, dark, dark_gray
-      show_indexes: true  # display index information
-      show_notes: true    # display table notes
-      height: 600         # diagram height in px
+      theme: black
+      show_indexes: true
+      show_notes: true
+      height: 600
 ```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `theme` | string | `black` | One of `default`, `ocean`, `sunset`, `forest`, `dark`, `dark_gray`, `black`. An unknown name falls back to `black` with a warning. |
+| `show_indexes` | bool | `true` | Show index information in table tooltips. |
+| `show_notes` | bool | `true` | Show table notes in tooltips. |
+| `height` | int (px) | `600` | Height of the diagram viewport. |
 
 ### Themes
 
@@ -216,18 +238,38 @@ Full DBML specification: [dbml.dbdiagram.io/docs](https://dbml.dbdiagram.io/docs
 |--------|-----|
 | **Move a table** | Click and drag the table |
 | **Pan the canvas** | Click and drag empty space |
-| **Zoom** | Mouse wheel (10% – 300%) |
+| **Zoom** | Ctrl/⌘ + wheel, pinch, or the `+` / `−` buttons (10% – 300%); plain wheel scrolls the page |
+| **Fit to view** | Fit button, or `0` with the diagram focused |
+| **Keyboard** | Tab to a table, arrow keys move it; `+` / `-` / `0` zoom the focused diagram |
 | **Fullscreen** | Click the expand button (top-right), Esc to exit |
 | **Export** | SVG or PNG button (top-right); uses theme background |
 | **Highlight connections** | Hover over a table |
 | **Select a line** | Click on any relationship line |
 | **Field tooltip** | Hover over a field row |
 
+## Limitations
+
+- Only the DBML features supported by [pydbml](https://github.com/Vanderhoof/PyDBML) are rendered; unsupported syntax is reported as a syntax error.
+- Diagrams are laid out automatically; positions are not configurable in DBML. Drag tables in the browser to adjust (not persisted).
+- Very large schemas (hundreds of tables) increase build time and page size. Split them into several diagrams or use `TableGroup`s.
+- Each diagram embeds its own SVG; shared CSS/JS is injected once per page.
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---------|-----|
+| Diagram shows `syntax error at line L, column C` | The DBML failed to parse; check the quoted source line. Multi-line tables are required (`Table a { ... }` on one line is invalid). |
+| `DBML file not found` / `DBML file path outside docs` | Paths are relative to `docs_dir` and cannot leave it. |
+| Diagram is blank or not interactive | Make sure `dbml` is listed under `plugins` and the page is built by MkDocs (not opened as raw Markdown). |
+| Diagram not interactive after navigating (Material) | Supported with `navigation.instant`; update to the latest plugin version. |
+| Theme looks wrong in dark mode | Diagram colors follow the MkDocs Material palette; set `theme: dark`/`black` for dark sites. |
+| Mouse wheel does not zoom | Hold Ctrl (⌘ on macOS) while scrolling. |
+
 ## Project structure
 
 ```
 mkdocs-dbml/
-├── setup.py                          # package config
+├── pyproject.toml / setup.py         # package config
 ├── requirements.txt
 ├── mkdocs_dbml_plugin/
 │   ├── __init__.py
@@ -244,15 +286,9 @@ mkdocs-dbml/
         └── *.md
 ```
 
-## Publishing to PyPI (maintainers)
+## Contributing and releases
 
-```bash
-pip install build twine
-python -m build
-twine upload dist/*
-```
-
-Use an API token from [pypi.org/manage/account](https://pypi.org/manage/account/) (env `TWINE_USERNAME=__token__`, `TWINE_PASSWORD=<token>`).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the gitflow, tests (unit + Playwright e2e) and lint setup. Releases are published to PyPI automatically when a `vX.Y.Z` tag is pushed (see `.github/workflows/release.yml`); security issues: [SECURITY.md](SECURITY.md).
 
 ## License
 
