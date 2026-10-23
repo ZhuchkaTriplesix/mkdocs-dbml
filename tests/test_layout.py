@@ -81,3 +81,16 @@ Table e {
         )
         outputs.add(hashlib.md5(res.stdout.encode()).hexdigest())
     assert len(outputs) == 1
+
+
+def test_tall_tables_do_not_overlap_next_layer():
+    from pydbml import PyDBML
+
+    cols = "\n".join(f"  c{i} integer" for i in range(15))
+    dbml = f"Table big {{\n  id integer\n{cols}\n}}\nTable small {{\n  id integer\n  big_id integer [ref: > big.id]\n}}\n"
+    p = PyDBML(dbml)
+    pos, dim = GraphLayoutEngine(p.tables, p.refs).calculate_positions()
+    (bx, by), (_, bh) = pos["big"], dim["big"]
+    sy = pos["small"][1]
+    assert sy >= by + bh or pos["small"][0] != bx
+    assert sy - (by + bh) >= 120 or sy + dim["small"][1] <= by
