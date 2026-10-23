@@ -93,3 +93,9 @@ def scale_of(wrapper):
     import re
 
     return float(re.search(r"scale\(([\d.]+)\)", svg_transform(wrapper)).group(1))
+
+
+def transform_values(wrapper):
+    import re
+
+    return tuple(float(v) for v in re.findall(r"-?[\d.]+", svg_transform(wrapper)))

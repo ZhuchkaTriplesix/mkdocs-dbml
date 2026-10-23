@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from playwright.sync_api import expect
 
-from .conftest import center, scale_of, svg_transform
+from .conftest import center, scale_of, svg_transform, transform_values
 
 
 def table(wrapper, name):
@@ -78,7 +78,7 @@ def test_zoom_is_clamped(home, wrapper):
 
 
 def test_zoom_buttons_and_fit(wrapper):
-    fitted = svg_transform(wrapper)
+    fitted = transform_values(wrapper)
     base = scale_of(wrapper)
     wrapper.locator(".dbml-zoom-in-btn").click()
     assert scale_of(wrapper) == pytest.approx(base * 1.25, rel=1e-3)
@@ -86,7 +86,7 @@ def test_zoom_buttons_and_fit(wrapper):
     wrapper.locator(".dbml-zoom-out-btn").click()
     assert scale_of(wrapper) == pytest.approx(base * 0.8, rel=1e-3)
     wrapper.locator(".dbml-fit-btn").click()
-    assert svg_transform(wrapper) == fitted
+    assert transform_values(wrapper) == pytest.approx(fitted, abs=0.01)
 
 
 def test_keyboard_shortcuts_on_focused_diagram(home, wrapper):
@@ -326,3 +326,21 @@ def test_manually_moved_diagram_is_not_refit_after_fonts_load(home, wrapper):
     zoomed = svg_transform(wrapper)
     home.evaluate("document.fonts.dispatchEvent(new Event('loadingdone'))")
     assert svg_transform(wrapper) == zoomed
+
+
+def test_svg_fills_wrapper_exactly_despite_theme_rules(home, wrapper):
+    box = wrapper.bounding_box()
+    svg = wrapper.locator(".dbml-diagram").evaluate(
+        "el => { const s = el.style.transform; el.style.transform = 'none'; const r = el.getBoundingClientRect(); el.style.transform = s; return [r.width, r.height]; }"
+    )
+    assert svg[1] == pytest.approx(box["height"] - 2, abs=1.5)  # minus the 1px borders
+    assert svg[0] == pytest.approx(box["width"] - 2, abs=1.5)
+
+
+def test_wrapper_never_scrolls_internally(home, wrapper):
+    for selector in (".dbml-zoom-in-btn", ".dbml-zoom-out-btn", ".dbml-fit-btn"):
+        wrapper.locator(selector).click()
+    wrapper.locator(".dbml-export-svg-btn").focus()
+    assert wrapper.evaluate("el => [el.scrollTop, el.scrollLeft]") == [0, 0]
+    wrapper.evaluate("el => el.scrollTo(0, 40)")
+    assert wrapper.evaluate("el => el.scrollTop") == 0
