@@ -9,6 +9,7 @@ from .config import (
     TYPE_AREA_START,
     TYPE_AREA_RIGHT_PAD,
     TYPE_CHAR_WIDTH,
+    MIN_LAYER_HEIGHT,
 )
 
 
@@ -68,23 +69,27 @@ class GraphLayoutEngine:
             if table not in visited:
                 layers.append([table])
 
-        for layer_idx, layer in enumerate(layers):
+        layer_y = padding
+        for layer in layers:
             start_x = padding
+            layer_height = 0
 
             for col_idx, table_name in enumerate(layer):
                 table = self.tables[table_name]
 
                 x = start_x + col_idx * (col_width + h_spacing)
-                y = padding + layer_idx * (300 + v_spacing)
 
                 field_count = len(table.columns)
                 height = HEADER_HEIGHT + (field_count * ROW_HEIGHT) + TABLE_BOTTOM_PADDING
 
-                positions[table_name] = (x, y)
+                positions[table_name] = (x, layer_y)
                 dimensions[table_name] = (
                     self._table_width(table, col_width, col_width + h_spacing - 60),
                     height,
                 )
+                layer_height = max(layer_height, height)
+
+            layer_y += max(layer_height, MIN_LAYER_HEIGHT) + v_spacing
 
         return positions, dimensions
 
