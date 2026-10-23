@@ -7,6 +7,7 @@ import logging
 from pathlib import Path
 from mkdocs.plugins import BasePlugin
 from mkdocs.config import config_options
+from pyparsing import ParseBaseException
 from .renderer import DbmlRenderer
 from .config import THEMES, DEFAULT_HEIGHT
 
@@ -108,7 +109,12 @@ class DbmlPlugin(BasePlugin):
                 )
             try:
                 return self._indent(renderer.render(dbml_code), indent)
-            except (ValueError, KeyError) as e:
+            except (ValueError, KeyError, ParseBaseException) as e:
+                log.warning(
+                    "mkdocs-dbml: invalid DBML in %s: %s",
+                    getattr(getattr(page, "file", None), "src_path", "<unknown page>"),
+                    e,
+                )
                 safe_msg = html_module.escape(str(e))
                 return f'<div class="dbml-error">Error parsing DBML: {safe_msg}</div>'
             except Exception:

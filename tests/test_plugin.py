@@ -136,3 +136,12 @@ def test_plugin_injects_styles_for_error_only_pages(plugin):
     assert "<!-- dbml-styles -->" in out
     html = plugin.on_post_page("<html><head></head><body>" + out + "</body></html>", None, {})
     assert "<style>" in html and ".dbml-error" in html
+
+
+def test_plugin_syntax_error_is_reported_without_traceback(plugin, caplog):
+    plugin.on_config({})
+    md = "```dbml\nTable oops {\n  id integer [\n```\n"
+    out = plugin.on_page_markdown(md, None, {"docs_dir": "docs"}, None)
+    assert "Error parsing DBML" in out
+    assert "Unexpected error" not in out
+    assert "Traceback" not in caplog.text
