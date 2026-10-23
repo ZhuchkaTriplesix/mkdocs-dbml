@@ -310,3 +310,19 @@ def test_manually_zoomed_diagram_is_not_refit_on_resize(home, wrapper):
     assert scale_of(wrapper) == pytest.approx(zoomed)
     wrapper.locator(".dbml-fit-btn").click()
     assert inside(wrapper)
+
+
+def test_untouched_diagram_refits_after_fonts_load(home, wrapper):
+    fitted = svg_transform(wrapper)
+    wrapper.locator(".dbml-diagram").evaluate(
+        "el => { el.style.transform = 'translate(0px, 0px) scale(0.5)'; }"
+    )
+    home.evaluate("document.fonts.dispatchEvent(new Event('loadingdone'))")
+    assert svg_transform(wrapper) == fitted
+
+
+def test_manually_moved_diagram_is_not_refit_after_fonts_load(home, wrapper):
+    wrapper.locator(".dbml-zoom-in-btn").click()
+    zoomed = svg_transform(wrapper)
+    home.evaluate("document.fonts.dispatchEvent(new Event('loadingdone'))")
+    assert svg_transform(wrapper) == zoomed
