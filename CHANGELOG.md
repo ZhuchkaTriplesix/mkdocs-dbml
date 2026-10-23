@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - Unreleased
+## [1.2.0] - 2026-10-23
 
 ### Added
 - `height` plugin option for the diagram viewport.
@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Playwright end-to-end test suite and CI job.
 
 ### Changed
+- Minimum supported dependencies raised to `mkdocs>=1.5.0` and `pydbml>=1.0.10` (older versions did not work).
 - Darker theme gradients for WCAG AA contrast; dark-mode controls follow the palette.
 - Table width fits the longest column type; layers are spaced by the tallest table.
 - Syntax errors in DBML are reported as `syntax error at line L, column C` without a traceback.
