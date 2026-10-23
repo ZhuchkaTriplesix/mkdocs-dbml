@@ -645,8 +645,10 @@ function initDiagrams() {
             legend.addEventListener('click', function() { legend.classList.toggle('collapsed'); });
         }
         W.addEventListener('dblclick', function(e) {
-            var row = e.target.closest ? e.target.closest('[data-field]') : null;
-            var grp = e.target.closest ? e.target.closest('[data-table]') : null;
+            // Pointer capture retargets the event to the wrapper, so hit-test by position.
+            var el = D.elementFromPoint(e.clientX, e.clientY);
+            var row = el && el.closest ? el.closest('[data-field]') : null;
+            var grp = el && el.closest ? el.closest('[data-table]') : null;
             var txt = row ? row.getAttribute('data-field') : (grp ? grp.getAttribute('data-table') : '');
             if (!txt || !navigator.clipboard) return;
             navigator.clipboard.writeText(txt).then(function() { showHint('Copied: ' + txt); }, function() {});
