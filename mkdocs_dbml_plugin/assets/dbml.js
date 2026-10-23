@@ -903,6 +903,11 @@ function initDiagrams() {
         }
 
         fitToView();
+        function refitIfAuto() { if (autoFit) fitToView(); }
+        if (D.fonts) {
+            if (D.fonts.ready) D.fonts.ready.then(refitIfAuto);
+            if (D.fonts.addEventListener) D.fonts.addEventListener('loadingdone', refitIfAuto);
+        }
         if (window.ResizeObserver) {
             var lastW = W.clientWidth, lastH = W.clientHeight;
             new ResizeObserver(function() {
