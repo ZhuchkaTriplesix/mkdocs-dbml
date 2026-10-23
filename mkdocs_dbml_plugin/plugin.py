@@ -49,6 +49,15 @@ class DbmlPlugin(BasePlugin):
         return config
 
     @staticmethod
+    def _describe_error(error):
+        """Short, reader-friendly text; pyparsing's own message dumps the whole grammar."""
+        if isinstance(error, ParseBaseException):
+            where = f"line {error.lineno}, column {error.col}"
+            source = (error.line or "").strip()
+            return f"syntax error at {where}" + (f": {source}" if source else "")
+        return str(error)
+
+    @staticmethod
     def _indent(text, indent):
         if not indent:
             return text
@@ -110,12 +119,13 @@ class DbmlPlugin(BasePlugin):
             try:
                 return self._indent(renderer.render(dbml_code), indent)
             except (ValueError, KeyError, ParseBaseException) as e:
+                message = self._describe_error(e)
                 log.warning(
                     "mkdocs-dbml: invalid DBML in %s: %s",
                     getattr(getattr(page, "file", None), "src_path", "<unknown page>"),
-                    e,
+                    message,
                 )
-                safe_msg = html_module.escape(str(e))
+                safe_msg = html_module.escape(message)
                 return f'<div class="dbml-error">Error parsing DBML: {safe_msg}</div>'
             except Exception:
                 log.exception("Unexpected error rendering DBML diagram")

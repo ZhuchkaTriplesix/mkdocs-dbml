@@ -113,3 +113,9 @@ def test_empty_block_message_is_styled(page, site_url):
     empty = page.locator(".dbml-empty")
     expect(empty).to_have_text("No tables found")
     assert empty.evaluate("el => getComputedStyle(el).borderTopStyle") == "dashed"
+
+
+def test_syntax_error_message_points_at_the_problem(page, site_url):
+    page.goto(site_url + "broken/")
+    text = page.locator(".dbml-error").first.text_content()
+    assert "syntax error at line" in text and len(text) < 300
