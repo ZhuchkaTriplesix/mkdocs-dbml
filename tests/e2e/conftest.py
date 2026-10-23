@@ -69,6 +69,8 @@ def browser_context_args(browser_context_args):
 def home(page, site_url):
     page.goto(site_url)
     page.wait_for_selector(".dbml-diagram-wrapper[data-dbml-init]")
+    page.wait_for_load_state("load")
+    page.evaluate("document.fonts.ready")
     return page
 
 
