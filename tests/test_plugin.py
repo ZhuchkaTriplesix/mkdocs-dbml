@@ -145,3 +145,11 @@ def test_plugin_syntax_error_is_reported_without_traceback(plugin, caplog):
     assert "Error parsing DBML" in out
     assert "Unexpected error" not in out
     assert "Traceback" not in caplog.text
+
+
+def test_plugin_syntax_error_message_is_concise(plugin):
+    plugin.on_config({})
+    md = "```dbml\nTable oops {\n  id integer [\n}\n```\n"
+    out = plugin.on_page_markdown(md, None, {"docs_dir": "docs"}, None)
+    assert "syntax error at line 3, column 1" in out
+    assert len(out) < 400
