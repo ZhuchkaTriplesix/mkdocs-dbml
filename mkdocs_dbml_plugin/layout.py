@@ -51,12 +51,13 @@ class GraphLayoutEngine:
         visited.add(start_table)
         current_layer = [start_table]
 
+        order = {name: idx for idx, name in enumerate(table_list)}
         while current_layer:
             layers.append(current_layer)
             next_layer = []
 
             for table in current_layer:
-                for neighbor in self.graph.get(table, set()):
+                for neighbor in sorted(self.graph.get(table, ()), key=order.__getitem__):
                     if neighbor not in visited:
                         visited.add(neighbor)
                         next_layer.append(neighbor)
