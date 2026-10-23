@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import struct
 
-from .conftest import center
 
 
 def read_download(download):

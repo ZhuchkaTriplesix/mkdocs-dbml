@@ -117,7 +117,7 @@ def test_plugin_handles_indented_block(plugin):
     result = plugin.on_page_markdown(md, None, {"docs_dir": "docs"}, None)
     assert "dbml-diagram-wrapper" in result
     assert "```dbml" not in result
-    assert all(l.startswith("    ") for l in result.splitlines()[1:] if l.strip())
+    assert all(line.startswith("    ") for line in result.splitlines()[1:] if line.strip())
 
 
 def test_plugin_height_option_passed_to_renderer():

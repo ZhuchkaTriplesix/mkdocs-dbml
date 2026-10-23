@@ -27,8 +27,8 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "mkdocs>=1.0.0",
-    "pydbml>=1.0.0",
+    "mkdocs>=1.5.0",
+    "pydbml>=1.0.10",
 ]
 
 [project.urls]
@@ -46,6 +46,10 @@ fast = [
 dev = [
     "cython>=0.29",
     "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.5",
+    "build",
+    "twine",
 ]
 e2e = [
     "pytest>=7.0",
@@ -75,3 +79,19 @@ mkdocs_dbml_plugin = ["assets/*.js", "assets/*.css"]
 testpaths = ["tests"]
 markers = ["e2e: browser end-to-end tests (need `pip install .[e2e]` and `playwright install chromium`)"]
 filterwarnings = ["ignore:.*deprecated.*:DeprecationWarning"]
+
+[tool.ruff]
+target-version = "py39"
+extend-exclude = ["example", "_routing.c"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "B"]
+
+[tool.coverage.run]
+source = ["mkdocs_dbml_plugin"]
+
+[tool.coverage.report]
+# _routing_py.py is the pure-Python fallback of the router and is mostly exercised
+# through e2e rendering; raise this as unit coverage of routing grows (#64).
+fail_under = 60
+show_missing = true

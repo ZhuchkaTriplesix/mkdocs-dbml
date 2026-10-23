@@ -7,6 +7,47 @@ on:
     branches: [master, main, develop]
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: ruff check .
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Build and check
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build
+          twine check --strict dist/*
+      - name: Install wheel in a clean venv and build the example
+        run: |
+          python -m venv /tmp/clean
+          /tmp/clean/bin/pip install dist/*.whl
+          cd example && /tmp/clean/bin/mkdocs build --strict
+
+  min-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.9"
+      - name: Install oldest supported dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . "mkdocs==1.5.0" "pydbml==1.0.10" pytest
+      - run: pytest tests --ignore=tests/e2e -q
+
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -27,7 +68,7 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Run tests
-        run: pytest tests/ -v
+        run: pytest tests/ --ignore=tests/e2e -v --cov --cov-report=term-missing
 
   e2e:
     runs-on: ubuntu-latest

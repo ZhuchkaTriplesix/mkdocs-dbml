@@ -1,6 +1,5 @@
 """Tests for GraphLayoutEngine."""
 
-import pytest
 from pydbml import PyDBML
 from mkdocs_dbml_plugin.layout import GraphLayoutEngine
 

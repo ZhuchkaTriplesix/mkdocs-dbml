@@ -237,7 +237,6 @@ def _route_connection_py(
     )
 
     best_cost = 1e18
-    best_wp = []
     best_sf = "right"
     best_st = "left"
 
@@ -494,10 +493,8 @@ if np is not None:
             return 4
 
         # S-step for staggered diagonal tables with vertical clearance
-        fx = rects[skip1, 0]
         fy = rects[skip1, 1]
         fh = rects[skip1, 3]
-        tx = rects[skip2, 0]
         ty = rects[skip2, 1]
         th = rects[skip2, 3]
         vert_clearance = (fy + fh + 15.0 <= ty) or (ty + th + 15.0 <= fy)
