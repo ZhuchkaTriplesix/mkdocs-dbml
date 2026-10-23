@@ -1,0 +1,15 @@
+site_name: DBML e2e
+use_directory_urls: true
+theme:
+  name: material
+  features:
+    - navigation.instant
+nav:
+  - Home: index.md
+  - Other: other.md
+  - Broken: broken.md
+  - Empty: empty.md
+plugins:
+  - dbml:
+      theme: black
+      height: 500

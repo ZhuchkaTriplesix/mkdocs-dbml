@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-SITE_SRC = Path(__file__).parent / "site"
+SITE_SRC = Path(__file__).parent / "fixture_site"
 
 
 class _QuietHandler(http.server.SimpleHTTPRequestHandler):
