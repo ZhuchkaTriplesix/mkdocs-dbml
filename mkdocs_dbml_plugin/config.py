@@ -8,6 +8,7 @@ TABLE_GROUP_PADDING = 24
 SVG_PADDING = 80
 CONN_GAP = 48.0
 MIN_LAYER_HEIGHT = 300
+LARGE_SCHEMA_TABLES = 150  # warn above this: page size and drag cost grow with table count
 TYPE_AREA_START = 150
 TYPE_AREA_RIGHT_PAD = 70
 TYPE_CHAR_WIDTH = 6.7

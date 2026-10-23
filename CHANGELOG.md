@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Smaller diagrams (~18% less HTML on large schemas): the header gradient and field icons are defined once per diagram and reused; table headers no longer need a per-table clip path.
+
+### Added
+- Warning when a schema has more than 150 tables.
+
 ## [1.2.0] - 2026-10-23
 
 ### Added

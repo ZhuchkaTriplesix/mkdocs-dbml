@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Optional
 from pydbml import PyDBML
 import hashlib
+import logging
 from pathlib import Path
 try:
     import numpy as np
@@ -10,6 +11,7 @@ except ImportError:
     np = None
 from .layout import GraphLayoutEngine
 from .config import (
+    LARGE_SCHEMA_TABLES,
     THEMES,
     DEFAULT_THEME,
     DEFAULT_HEIGHT,
@@ -45,6 +47,9 @@ ICON_UNIQUE = (
 )
 
 
+log = logging.getLogger("mkdocs.plugins.dbml")
+
+
 class DbmlRenderer:
     def __init__(
         self, theme=DEFAULT_THEME, show_indexes=True, show_notes=True, height=DEFAULT_HEIGHT
@@ -62,6 +67,14 @@ class DbmlRenderer:
 
         if not parsed.tables:
             return '<!-- dbml-styles -->\n<div class="dbml-empty">No tables found</div>'
+
+        if len(parsed.tables) > LARGE_SCHEMA_TABLES:
+            log.warning(
+                "mkdocs-dbml: schema has %d tables (more than %d); the page will be large "
+                "and dragging may be slow. Consider splitting it into several diagrams.",
+                len(parsed.tables),
+                LARGE_SCHEMA_TABLES,
+            )
 
         layout_engine = GraphLayoutEngine(parsed.tables, parsed.refs)
         self.table_positions, self.table_dimensions = (
@@ -160,7 +173,7 @@ class DbmlRenderer:
 
         bg_color = self.colors["bg_color"]
         svg_parts = [
-            f'<svg class="dbml-diagram" role="img" aria-label="Database diagram with {len(parsed.tables)} tables" viewBox="0 0 {max_x} {max_y}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible" data-bg="{bg_color}">'
+            f'<svg class="dbml-diagram" role="img" aria-label="Database diagram with {len(parsed.tables)} tables" viewBox="0 0 {max_x} {max_y}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="overflow:visible" data-bg="{bg_color}">'
         ]
 
         line_color = self.colors["line_color"]
@@ -235,6 +248,22 @@ class DbmlRenderer:
             '<feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>'
         )
         svg_parts.append("</filter>")
+
+        svg_parts.append(
+            f'<linearGradient id="{self._sid("gradient")}" x1="0%" y1="0%" x2="100%" y2="0%">'
+            f'<stop offset="0%" style="stop-color:{self.colors["gradient_start"]};stop-opacity:1" />'
+            f'<stop offset="100%" style="stop-color:{self.colors["gradient_end"]};stop-opacity:1" />'
+            "</linearGradient>"
+        )
+        for name, path in (
+            ("pk", ICON_PK),
+            ("fk", ICON_FK),
+            ("notnull", ICON_NOT_NULL),
+            ("unique", ICON_UNIQUE),
+        ):
+            svg_parts.append(
+                f'<symbol id="{self._sid("icon-" + name)}" viewBox="0 0 24 24"><path d="{path}"/></symbol>'
+            )
 
         svg_parts.append("</defs>")
 
@@ -364,27 +393,9 @@ class DbmlRenderer:
             f'class="dbml-table-bg" fill="{table_fill}" stroke="{table_stroke}" stroke-width="2" rx="8" filter="url(#{self._sid("shadow")})"/>'
         )
 
-        table_hash = hashlib.sha256(table.name.encode()).hexdigest()[:16]
-        gradient_id = self._sid(f"gradient-{table_hash}")
         svg.append(
-            f'<defs><linearGradient id="{gradient_id}" x1="0%" y1="0%" x2="100%" y2="0%">'
-        )
-        svg.append(
-            f'<stop offset="0%" style="stop-color:{self.colors["gradient_start"]};stop-opacity:1" />'
-        )
-        svg.append(
-            f'<stop offset="100%" style="stop-color:{self.colors["gradient_end"]};stop-opacity:1" />'
-        )
-        svg.append("</linearGradient></defs>")
-
-        clip_id = self._sid(f"clip-{table_hash}")
-        svg.append(
-            f'<defs><clipPath id="{clip_id}"><rect x="{x}" y="{y}" width="{width}" height="44" rx="8"/></clipPath></defs>'
-        )
-        svg.append(f'<rect x="{x}" y="{y}" width="{width}" height="44" ')
-        svg.append(f'fill="url(#{gradient_id})" clip-path="url(#{clip_id})"/>')
-        svg.append(
-            f'<rect x="{x}" y="{y + 36}" width="{width}" height="8" fill="url(#{gradient_id})"/>'
+            f'<path d="M{x},{y + 44}V{y + 8}a8,8 0 0 1 8,-8H{x + width - 8}a8,8 0 0 1 8,8V{y + 44}Z" '
+            f'class="dbml-table-header" fill="url(#{self._sid("gradient")})"/>'
         )
 
         svg.append(f'<text x="{x + width / 2}" y="{y + 28}" ')
@@ -460,22 +471,14 @@ class DbmlRenderer:
             name_class += " is-pk"
             name_color = "#fca5a5" if self.theme == "black" else ("#f87171" if is_dark else "#b91c1c")
             svg.append(
-                f'<svg x="{icon_x}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
+                f'<use xlink:href="#{self._sid("icon-pk")}" x="{icon_x}" y="{y - 12}" width="16" height="16" fill="#ef4444"/>'
             )
-            svg.append(
-                f'<path fill="#ef4444" d="{ICON_PK}"/>'
-            )
-            svg.append("</svg>")
         elif is_fk:
             name_class += " is-fk"
             name_color = "#6ee7b7" if self.theme == "black" else ("#34d399" if is_dark else "#047857")
             svg.append(
-                f'<svg x="{icon_x}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
+                f'<use xlink:href="#{self._sid("icon-fk")}" x="{icon_x}" y="{y - 12}" width="16" height="16" fill="#10b981"/>'
             )
-            svg.append(
-                f'<path fill="#10b981" d="{ICON_FK}"/>'
-            )
-            svg.append("</svg>")
 
         svg.append(
             f'<text class="{name_class}" x="{name_center_x}" y="{y}" text-anchor="middle" font-size="13" fill="{name_color}" font-weight="600" font-family="monospace">'
@@ -496,22 +499,14 @@ class DbmlRenderer:
 
         if column.not_null:
             svg.append(
-                f'<svg x="{badges_x - 18}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
+                f'<use xlink:href="#{self._sid("icon-notnull")}" x="{badges_x - 18}" y="{y - 12}" width="16" height="16" fill="#f59e0b"/>'
             )
-            svg.append(
-                f'<path fill="#f59e0b" d="{ICON_NOT_NULL}"/>'
-            )
-            svg.append("</svg>")
             badges_x -= 22
 
         if column.unique:
             svg.append(
-                f'<svg x="{badges_x - 18}" y="{y - 12}" width="16" height="16" viewBox="0 0 24 24">'
+                f'<use xlink:href="#{self._sid("icon-unique")}" x="{badges_x - 18}" y="{y - 12}" width="16" height="16" fill="#3b82f6"/>'
             )
-            svg.append(
-                f'<path fill="#3b82f6" d="{ICON_UNIQUE}"/>'
-            )
-            svg.append("</svg>")
 
         svg.append("</g>")
 
