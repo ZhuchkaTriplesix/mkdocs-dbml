@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mkdocs-dbml-plugin"
-version = "1.1.0"
+version = "1.2.0"
 description = "MkDocs plugin to render DBML as interactive ERD diagrams"
 readme = "README.md"
 license = "MIT"
@@ -24,10 +24,11 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "mkdocs>=1.0.0",
-    "pydbml>=1.0.0",
+    "mkdocs>=1.5.0",
+    "pydbml>=1.0.10",
 ]
 
 [project.urls]
@@ -45,12 +46,23 @@ fast = [
 dev = [
     "cython>=0.29",
     "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.5",
+    "build",
+    "twine",
+]
+e2e = [
+    "pytest>=7.0",
+    "pytest-playwright>=0.5",
+    "mkdocs-material>=9.0",
 ]
 all = [
     "numpy>=1.20.0",
     "numba>=0.60.0",
     "cython>=0.29",
     "pytest>=7.0",
+    "pytest-playwright>=0.5",
+    "mkdocs-material>=9.0",
 ]
 
 [project.entry-points."mkdocs.plugins"]
@@ -65,4 +77,21 @@ mkdocs_dbml_plugin = ["assets/*.js", "assets/*.css"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["e2e: browser end-to-end tests (need `pip install .[e2e]` and `playwright install chromium`)"]
 filterwarnings = ["ignore:.*deprecated.*:DeprecationWarning"]
+
+[tool.ruff]
+target-version = "py39"
+extend-exclude = ["example", "_routing.c"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "B"]
+
+[tool.coverage.run]
+source = ["mkdocs_dbml_plugin"]
+
+[tool.coverage.report]
+# _routing_py.py is the pure-Python fallback of the router and is mostly exercised
+# through e2e rendering; raise this as unit coverage of routing grows (#64).
+fail_under = 60
+show_missing = true

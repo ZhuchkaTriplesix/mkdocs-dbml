@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-10-23
+
+### Added
+- `height` plugin option for the diagram viewport.
+- Zoom in / zoom out / fit-to-view buttons, Ctrl/⌘+wheel zoom with a hint, keyboard control (arrows move a table, `+`/`-`/`0` zoom).
+- Tooltips for table notes and indexes; double-click copies a field name.
+- Accessibility: roles, labels and focusable tables; reduced-motion support.
+- Playwright end-to-end test suite and CI job.
+
+### Changed
+- Minimum supported dependencies raised to `mkdocs>=1.5.0` and `pydbml>=1.0.10` (older versions did not work).
+- Darker theme gradients for WCAG AA contrast; dark-mode controls follow the palette.
+- Table width fits the longest column type; layers are spaced by the tallest table.
+- Syntax errors in DBML are reported as `syntax error at line L, column C` without a traceback.
+
+### Fixed
+- Non-deterministic layout across runs (`PYTHONHASHSEED`).
+- Tall tables overlapping the next layer.
+- Drag moving tables by the wrong distance when the view is scaled.
+- Clicks on a relationship line not selecting it; double-click copy retargeting.
+- Auto-fit computed before layout/fonts settled; Material theme overriding the diagram height.
+- Duplicate SVG ids with several diagrams per page; CRLF and indented ```` ```dbml ```` fences; path traversal in file includes.
+
 ## [1.1.0] - 2026-08-23
 
 ### Added

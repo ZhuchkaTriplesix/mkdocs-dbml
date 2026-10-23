@@ -7,10 +7,14 @@ FIELD_Y_START = 66
 TABLE_GROUP_PADDING = 24
 SVG_PADDING = 80
 CONN_GAP = 48.0
+MIN_LAYER_HEIGHT = 300
+TYPE_AREA_START = 150
+TYPE_AREA_RIGHT_PAD = 70
+TYPE_CHAR_WIDTH = 6.7
 
 THEMES = {
     "default": {
-        "gradient_start": "#667eea",
+        "gradient_start": "#5a67d8",
         "gradient_end": "#764ba2",
         "line_color": "#6366f1",
         "bg_color": "#f9fafb",
@@ -18,21 +22,21 @@ THEMES = {
     },
     "ocean": {
         "gradient_start": "#2E3192",
-        "gradient_end": "#1BFFFF",
+        "gradient_end": "#0e7490",
         "line_color": "#0ea5e9",
         "bg_color": "#f0f9ff",
         "border_color": "#bae6fd",
     },
     "sunset": {
-        "gradient_start": "#FA8BFF",
-        "gradient_end": "#2BD2FF",
+        "gradient_start": "#c026d3",
+        "gradient_end": "#0e7490",
         "line_color": "#f43f5e",
         "bg_color": "#fff1f2",
         "border_color": "#fecdd3",
     },
     "forest": {
         "gradient_start": "#134E5E",
-        "gradient_end": "#71B280",
+        "gradient_end": "#2f7d4f",
         "line_color": "#10b981",
         "bg_color": "#f0fdf4",
         "border_color": "#bbf7d0",
@@ -61,5 +65,9 @@ THEMES = {
 }
 
 
-def get_theme_colors(theme_name="default"):
-    return THEMES.get(theme_name, THEMES["default"])
+DEFAULT_THEME = "black"
+DEFAULT_HEIGHT = 600
+
+
+def get_theme_colors(theme_name=DEFAULT_THEME):
+    return THEMES.get(theme_name, THEMES[DEFAULT_THEME])

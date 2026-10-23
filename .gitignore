@@ -39,3 +39,8 @@ site/
 *.pyd
 *.c
 !setup.py
+
+# generated
+mkdocs_dbml_plugin/_routing.c
+test_optimized.html
+test-results/

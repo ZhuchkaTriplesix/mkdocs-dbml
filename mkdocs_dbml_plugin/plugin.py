@@ -7,10 +7,13 @@ import logging
 from pathlib import Path
 from mkdocs.plugins import BasePlugin
 from mkdocs.config import config_options
+from pyparsing import ParseBaseException
 from .renderer import DbmlRenderer
-from .config import THEMES
+from .config import THEMES, DEFAULT_HEIGHT
 
 log = logging.getLogger("mkdocs.plugins.dbml")
+
+STYLES_MARKER = "<!-- dbml-styles -->"
 
 
 class DbmlPlugin(BasePlugin):
@@ -18,6 +21,7 @@ class DbmlPlugin(BasePlugin):
         ("theme", config_options.Type(str, default="black")),
         ("show_indexes", config_options.Type(bool, default=True)),
         ("show_notes", config_options.Type(bool, default=True)),
+        ("height", config_options.Type(int, default=DEFAULT_HEIGHT)),
     )
 
     def on_config(self, config):
@@ -25,11 +29,12 @@ class DbmlPlugin(BasePlugin):
         if theme not in THEMES:
             available = ", ".join(sorted(THEMES.keys()))
             log.warning(
-                "mkdocs-dbml: unknown theme %r, falling back to 'default'. "
+                "mkdocs-dbml: unknown theme %r, falling back to 'black'. "
                 "Available themes: %s",
                 theme,
                 available,
             )
+            self.config["theme"] = "black"
 
         js_path = Path(__file__).parent / "assets" / "dbml.js"
         css_path = Path(__file__).parent / "assets" / "dbml.css"
@@ -39,18 +44,38 @@ class DbmlPlugin(BasePlugin):
             theme=self.config["theme"],
             show_indexes=self.config["show_indexes"],
             show_notes=self.config["show_notes"],
+            height=self.config.get("height", DEFAULT_HEIGHT),
         )
         return config
 
+    @staticmethod
+    def _describe_error(error):
+        """Short, reader-friendly text; pyparsing's own message dumps the whole grammar."""
+        if isinstance(error, ParseBaseException):
+            where = f"line {error.lineno}, column {error.col}"
+            source = (error.line or "").strip()
+            return f"syntax error at {where}" + (f": {source}" if source else "")
+        return str(error)
+
+    @staticmethod
+    def _indent(text, indent):
+        if not indent:
+            return text
+        return "\n".join(indent + line for line in text.split("\n"))
+
     def on_page_markdown(self, markdown, page, config, files):
-        pattern = r"```dbml\n(.*?)```"
+        pattern = r"^([ \t]*)```dbml[ \t]*\r?\n(.*?)^[ \t]*```[ \t]*\r?$"
         docs_dir = config.get("docs_dir", "docs")
 
         def replace_dbml(match):
-            raw = match.group(1)
-            if not raw:
+            indent = match.group(1)
+            raw = match.group(2)
+            if not raw.strip():
                 return '<div class="dbml-error">Empty DBML block</div>'
-            dbml_code = raw.strip()
+            dbml_code = "\n".join(
+                line[len(indent):] if line.startswith(indent) else line
+                for line in raw.replace("\r\n", "\n").split("\n")
+            ).strip()
             lines = dbml_code.split("\n")
             first = lines[0].strip() if lines else ""
 
@@ -62,9 +87,9 @@ class DbmlPlugin(BasePlugin):
 
             if file_path:
                 resolved = os.path.normpath(os.path.join(docs_dir, file_path))
-                if not os.path.abspath(resolved).startswith(
-                    os.path.abspath(docs_dir)
-                ):
+                docs_root = os.path.realpath(docs_dir)
+                real = os.path.realpath(resolved)
+                if os.path.commonpath([docs_root, real]) != docs_root:
                     return (
                         '<div class="dbml-error">DBML file path outside docs: '
                         f"{html_module.escape(file_path)}</div>"
@@ -89,11 +114,18 @@ class DbmlPlugin(BasePlugin):
                     theme=self.config["theme"],
                     show_indexes=self.config["show_indexes"],
                     show_notes=self.config["show_notes"],
+                    height=self.config.get("height", DEFAULT_HEIGHT),
                 )
             try:
-                return renderer.render(dbml_code)
-            except (ValueError, KeyError) as e:
-                safe_msg = html_module.escape(str(e))
+                return self._indent(renderer.render(dbml_code), indent)
+            except (ValueError, KeyError, ParseBaseException) as e:
+                message = self._describe_error(e)
+                log.warning(
+                    "mkdocs-dbml: invalid DBML in %s: %s",
+                    getattr(getattr(page, "file", None), "src_path", "<unknown page>"),
+                    message,
+                )
+                safe_msg = html_module.escape(message)
                 return f'<div class="dbml-error">Error parsing DBML: {safe_msg}</div>'
             except Exception:
                 log.exception("Unexpected error rendering DBML diagram")
@@ -103,15 +135,17 @@ class DbmlPlugin(BasePlugin):
                     "</div>"
                 )
 
-        markdown = re.sub(pattern, replace_dbml, markdown, flags=re.DOTALL)
+        markdown = re.sub(pattern, replace_dbml, markdown, flags=re.DOTALL | re.MULTILINE)
+        if 'class="dbml-error"' in markdown and STYLES_MARKER not in markdown:
+            markdown = STYLES_MARKER + "\n" + markdown
         return markdown
 
     def on_post_page(self, output, page, config):
-        if "<!-- dbml-styles -->" not in output:
+        if STYLES_MARKER not in output:
             return output
-        css = getattr(self, "_css_content", None) or DbmlRenderer.get_css(self.config["theme"])
-        js = getattr(self, "_js_content", "")
+        css = self._css_content
+        js = self._js_content
         output = output.replace("</head>", f"<style>{css}</style></head>")
         output = output.replace("</body>", f"<script>{js}</script></body>")
-        output = output.replace("<!-- dbml-styles -->", "")
+        output = output.replace(STYLES_MARKER, "")
         return output

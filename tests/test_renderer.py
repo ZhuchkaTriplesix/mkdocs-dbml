@@ -1,6 +1,5 @@
 """Tests for DbmlRenderer."""
 
-import pytest
 from mkdocs_dbml_plugin.renderer import DbmlRenderer
 
 
@@ -271,3 +270,104 @@ def test_avoid_cutting_through_table_interior():
 
 
 
+
+
+NOTES_INDEXES_DBML = """
+Table users {
+  id integer [pk, note: 'primary id']
+  email varchar [unique]
+  Note: 'Users table'
+  indexes {
+    email [unique]
+  }
+}
+"""
+
+
+def test_notes_and_indexes_in_tooltips():
+    html = DbmlRenderer().render(NOTES_INDEXES_DBML)
+    assert "NOTE: Users table" in html
+    assert "NOTE: primary id" in html
+    assert "INDEX (email)" in html
+
+
+def test_notes_and_indexes_can_be_disabled():
+    html = DbmlRenderer(show_indexes=False, show_notes=False).render(NOTES_INDEXES_DBML)
+    assert "NOTE:" not in html
+    assert "INDEX (" not in html
+
+
+def test_svg_ids_unique_across_diagrams():
+    import re
+    a = DbmlRenderer().render("Table a {\n  id integer\n}")
+    b = DbmlRenderer().render("Table b {\n  id integer\n}")
+    ids_a = set(re.findall(r'\bid="([^"]+)"', a)) - {re.search(r'id="(dbml-[^"]+)"', a).group(1)}
+    ids_b = set(re.findall(r'\bid="([^"]+)"', b)) - {re.search(r'id="(dbml-[^"]+)"', b).group(1)}
+    assert ids_a and not (ids_a & ids_b)
+
+
+def test_url_refs_resolve_to_defined_ids():
+    import re
+    html = DbmlRenderer().render(
+        "Table a {\n  id integer [pk]\n}\nTable b {\n  aid integer [ref: > a.id]\n}"
+    )
+    defined = set(re.findall(r'\bid="([^"]+)"', html))
+    for ref in re.findall(r'url\(#([^)]+)\)', html):
+        assert ref in defined, ref
+
+
+def test_long_column_type_not_truncated():
+    html = DbmlRenderer().render("Table a {\n  name varchar(255)\n  amount numeric(12,2)\n}")
+    assert "varchar(255)" in html
+    assert "numeric(12,2)" in html
+
+
+def test_field_text_has_semantic_classes():
+    html = DbmlRenderer().render(
+        "Table a {\n  id integer [pk]\n}\nTable b {\n  aid integer [ref: > a.id]\n}"
+    )
+    assert 'class="dbml-field-name is-pk"' in html
+    assert 'class="dbml-field-name is-fk"' in html
+    assert 'class="dbml-field-type"' in html
+
+
+def test_wrapper_background_follows_theme():
+    from mkdocs_dbml_plugin.config import THEMES
+    html = DbmlRenderer(theme="forest").render("Table a {\n  id integer\n}")
+    assert f'--dbml-bg:{THEMES["forest"]["bg_color"]}' in html
+
+
+def test_height_option_and_zoom_controls():
+    html = DbmlRenderer(height=420).render("Table a {\n  id integer\n}")
+    assert "--dbml-height:420px" in html
+    for cls in ("dbml-zoom-in-btn", "dbml-zoom-out-btn", "dbml-fit-btn"):
+        assert cls in html
+
+
+def test_diagram_accessibility_attributes():
+    html = DbmlRenderer().render("Table a {\n  id integer\n}")
+    assert 'role="img"' in html
+    assert 'aria-label="Database diagram with 1 tables"' in html
+    assert 'tabindex="0" role="group" aria-label="Table a"' in html
+
+
+def test_theme_title_gradients_have_contrast():
+    from mkdocs_dbml_plugin.config import THEMES
+
+    def lum(h):
+        h = h.lstrip("#")
+        r, g, b = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+        def f(c):
+            return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+
+    for name, t in THEMES.items():
+        for key in ("gradient_start", "gradient_end"):
+            ratio = 1.05 / (lum(t[key]) + 0.05)
+            assert ratio >= 4.5, (name, key, ratio)
+
+
+def test_empty_schema_gets_styled_message():
+    html = DbmlRenderer().render("// nothing here")
+    assert "dbml-empty" in html and "<!-- dbml-styles -->" in html

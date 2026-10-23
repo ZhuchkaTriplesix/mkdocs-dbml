@@ -1,6 +1,11 @@
 """Pytest fixtures for mkdocs-dbml-plugin tests."""
 
+import importlib.util
+
 import pytest
+
+# Browser tests need the optional `e2e` extra; skip collecting them without it.
+collect_ignore = [] if importlib.util.find_spec("playwright") else ["e2e"]
 
 
 SIMPLE_DBML = """

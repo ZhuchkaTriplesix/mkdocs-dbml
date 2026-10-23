@@ -5,13 +5,17 @@ function cssSelectorEscape(s) {
     return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
-D.addEventListener('DOMContentLoaded', function() {
+function initDiagrams() {
     var wraps = D.querySelectorAll('.dbml-diagram-wrapper');
     for (var wi = 0; wi < wraps.length; wi++) { (function(W) {
+        if (W.getAttribute('data-dbml-init')) return;
         var svg = W.querySelector('.dbml-diagram');
         if (!svg) return;
+        W.setAttribute('data-dbml-init', '1');
         var fsBtn = W.querySelector('.dbml-fullscreen-btn');
-        if (fsBtn) {
+        if (fsBtn && !(W.requestFullscreen || W.webkitRequestFullscreen)) {
+            fsBtn.style.display = 'none';
+        } else if (fsBtn) {
             fsBtn.addEventListener('pointerdown', function(e) { e.stopPropagation(); });
             fsBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
@@ -132,21 +136,38 @@ D.addEventListener('DOMContentLoaded', function() {
             return { clone: clone, vw: vw, vh: vh };
         }
 
+        function exportName(ext) {
+            var seg = (location.pathname.split('/').filter(Boolean).pop() || 'diagram').replace(/\.[a-z0-9]+$/i, '');
+            return seg.replace(/[^\w.-]+/g, '-') + '-' + (W.id || 'dbml') + '.' + ext;
+        }
+        function saveBlob(blob, name) {
+            var url = URL.createObjectURL(blob);
+            var a = D.createElement('a');
+            a.href = url;
+            a.download = name;
+            D.body.appendChild(a);
+            a.click();
+            D.body.removeChild(a);
+            setTimeout(function() { URL.revokeObjectURL(url); }, 10000);
+        }
+        function exportFailed(btn, err) {
+            if (window.console) console.error('mkdocs-dbml: export failed', err);
+            var old = btn.getAttribute('title');
+            btn.setAttribute('title', 'Export failed');
+            setTimeout(function() { btn.setAttribute('title', old); }, 3000);
+        }
+
         var exportSvgBtn = W.querySelector('.dbml-export-svg-btn');
         if (exportSvgBtn) {
             exportSvgBtn.addEventListener('pointerdown', function(e) { e.stopPropagation(); });
             exportSvgBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 e.preventDefault();
-                var r = prepareExportClone();
-                var s = new XMLSerializer().serializeToString(r.clone);
-                var blob = new Blob([s], { type: 'image/svg+xml;charset=utf-8' });
-                var url = URL.createObjectURL(blob);
-                var a = D.createElement('a');
-                a.href = url;
-                a.download = 'diagram.svg';
-                a.click();
-                URL.revokeObjectURL(url);
+                try {
+                    var r = prepareExportClone();
+                    var s = new XMLSerializer().serializeToString(r.clone);
+                    saveBlob(new Blob([s], { type: 'image/svg+xml;charset=utf-8' }), exportName('svg'));
+                } catch (err) { exportFailed(exportSvgBtn, err); }
             });
         }
         var exportPngBtn = W.querySelector('.dbml-export-png-btn');
@@ -155,26 +176,30 @@ D.addEventListener('DOMContentLoaded', function() {
             exportPngBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 e.preventDefault();
-                var r = prepareExportClone();
-                var scale = 2;
-                var svgStr = new XMLSerializer().serializeToString(r.clone);
-                var dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
-                var img = new Image();
-                img.onload = function() {
-                    var canvas = D.createElement('canvas');
-                    canvas.width = r.vw * scale;
-                    canvas.height = r.vh * scale;
-                    var ctx = canvas.getContext('2d');
-                    ctx.fillStyle = svg.getAttribute('data-bg') || '#000';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.drawImage(img, 0, 0, r.vw * scale, r.vh * scale);
-                    var pngUrl = canvas.toDataURL('image/png');
-                    var a = D.createElement('a');
-                    a.href = pngUrl;
-                    a.download = 'diagram.png';
-                    a.click();
-                };
-                img.src = dataUrl;
+                try {
+                    var r = prepareExportClone();
+                    var scale = Math.min(2, 8192 / r.vw, 8192 / r.vh);
+                    var svgStr = new XMLSerializer().serializeToString(r.clone);
+                    var dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+                    var img = new Image();
+                    img.onload = function() {
+                        try {
+                            var canvas = D.createElement('canvas');
+                            canvas.width = Math.round(r.vw * scale);
+                            canvas.height = Math.round(r.vh * scale);
+                            var ctx = canvas.getContext('2d');
+                            ctx.fillStyle = svg.getAttribute('data-bg') || '#000';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            canvas.toBlob(function(blob) {
+                                if (blob) saveBlob(blob, exportName('png'));
+                                else exportFailed(exportPngBtn, 'toBlob returned null');
+                            }, 'image/png');
+                        } catch (err) { exportFailed(exportPngBtn, err); }
+                    };
+                    img.onerror = function(err) { exportFailed(exportPngBtn, err); };
+                    img.src = dataUrl;
+                } catch (err) { exportFailed(exportPngBtn, err); }
             });
         }
 
@@ -189,7 +214,7 @@ D.addEventListener('DOMContentLoaded', function() {
         svg.style.willChange = 'transform';
         W.style.cursor = 'grab';
         W.style.userSelect = 'none';
-        W.style.touchAction = 'none';
+        W.style.touchAction = 'pan-y';
 
         var tg = svg.querySelectorAll('.dbml-table-group');
         var TD = Object.create(null);
@@ -211,6 +236,7 @@ D.addEventListener('DOMContentLoaded', function() {
             TD[nm] = d;
             TA[i] = d;
             g.style.cursor = 'move';
+            g.style.touchAction = 'none';
             g.style.willChange = 'transform';
         }
 
@@ -261,6 +287,13 @@ D.addEventListener('DOMContentLoaded', function() {
                     v.text.setAttribute('y', minY + 18);
                 }
             }
+        }
+
+        var tablesLayer = svg.querySelector('.dbml-tables-layer');
+        // Screen px -> SVG user units, accounting for both our zoom and the viewBox scale.
+        function pxToUnits() {
+            var m = tablesLayer && tablesLayer.getScreenCTM && tablesLayer.getScreenCTM();
+            return m && m.a ? 1 / m.a : 1 / S;
         }
 
         var activePointers = new Map();
@@ -395,6 +428,23 @@ D.addEventListener('DOMContentLoaded', function() {
                 MX0 = e.clientX; MY0 = e.clientY;
                 W.setPointerCapture(e.pointerId);
             });
+            td.e.addEventListener('focus', function() { if (M === 0) hl(td.n); });
+            td.e.addEventListener('blur', function() { if (M === 0) uhl(); });
+            td.e.addEventListener('keydown', function(e) {
+                var step = (e.shiftKey ? 40 : 10) * pxToUnits(), mx = 0, my = 0;
+                if (e.key === 'ArrowLeft') mx = -step;
+                else if (e.key === 'ArrowRight') mx = step;
+                else if (e.key === 'ArrowUp') my = -step;
+                else if (e.key === 'ArrowDown') my = step;
+                else return;
+                e.preventDefault();
+                e.stopPropagation();
+                td.dx += mx;
+                td.dy += my;
+                td.e.style.transform = 'translate(' + td.dx + 'px,' + td.dy + 'px)';
+                uc();
+                if (td.group) updateTableGroups();
+            });
             td.e.addEventListener('pointerenter', function() {
                 if (M === 0) hl(td.n);
             });
@@ -404,6 +454,7 @@ D.addEventListener('DOMContentLoaded', function() {
         })(TA[i]); }
 
         W.addEventListener('pointerdown', function(e) {
+            autoFit = false;
             activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
             if (activePointers.size === 2) {
                 initPinch();
@@ -444,7 +495,7 @@ D.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             if (M === 1 && DR) {
-                var invS = 1 / S;
+                var invS = pxToUnits();
                 DR.dx = IX + (e.clientX - MX0) * invS;
                 DR.dy = IY + (e.clientY - MY0) * invS;
                 // Apply transform immediately for responsive feel
@@ -459,7 +510,7 @@ D.addEventListener('DOMContentLoaded', function() {
                     });
                 }
             } else if (M === 3 && GR) {
-                var invS = 1 / S;
+                var invS = pxToUnits();
                 var dX = (e.clientX - MX0) * invS;
                 var dY = (e.clientY - MY0) * invS;
                 for (var k = 0; k < GR.length; k++) {
@@ -506,18 +557,115 @@ D.addEventListener('DOMContentLoaded', function() {
         W.addEventListener('pointerup', endPointer);
         W.addEventListener('pointercancel', endPointer);
 
+        var hintTimer = 0;
+        var hintEl = D.createElement('div');
+        hintEl.className = 'dbml-hint';
+        hintEl.setAttribute('aria-hidden', 'true');
+        var defaultHint = (/Mac|iPhone|iPad/.test(navigator.platform) ? '\u2318' : 'Ctrl') + ' + scroll to zoom';
+        hintEl.textContent = defaultHint;
+        W.appendChild(hintEl);
+        function showHint(msg) {
+            hintEl.textContent = msg || defaultHint;
+            hintEl.classList.add('visible');
+            clearTimeout(hintTimer);
+            hintTimer = setTimeout(function() { hintEl.classList.remove('visible'); }, 1200);
+        }
+
         W.addEventListener('wheel', function(e) {
+            if (!(e.ctrlKey || e.metaKey)) {
+                showHint();
+                return;
+            }
             e.preventDefault();
-            var ns = S * (e.deltaY > 0 ? 0.92 : 1.08);
-            if (ns < 0.1) ns = 0.1; else if (ns > 3) ns = 3;
+            var dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1);
+            if (dy > 100) dy = 100; else if (dy < -100) dy = -100;
             var r = W.getBoundingClientRect();
-            var px = e.clientX - r.left, py = e.clientY - r.top;
+            zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-dy * 0.001));
+        }, {passive: false});
+
+        function applyT() {
+            svg.style.transform = 'translate(' + TX + 'px,' + TY + 'px) scale(' + S + ')';
+        }
+
+        function zoomAt(px, py, factor) {
+            autoFit = false;
+            var ns = S * factor;
+            if (ns < 0.1) ns = 0.1; else if (ns > 3) ns = 3;
             var c = ns / S;
             TX = px - (px - TX) * c;
             TY = py - (py - TY) * c;
             S = ns;
-            svg.style.transform = 'translate(' + TX + 'px,' + TY + 'px) scale(' + S + ')';
-        }, {passive: false});
+            applyT();
+        }
+
+        var autoFit = true;
+
+        function fitToView() {
+            S = 1; TX = 0; TY = 0;
+            applyT();
+            var layers = svg.querySelectorAll('.dbml-tablegroups-layer, .dbml-relationships-layer, .dbml-tables-layer');
+            var wr = W.getBoundingClientRect();
+            var l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+            for (var i = 0; i < layers.length; i++) {
+                var br = layers[i].getBoundingClientRect();
+                if (!br.width && !br.height) continue;
+                if (br.left < l) l = br.left;
+                if (br.top < t) t = br.top;
+                if (br.right > r) r = br.right;
+                if (br.bottom > b) b = br.bottom;
+            }
+            if (l === Infinity || !wr.width || !wr.height) return;
+            var pad = 24;
+            var cw = r - l, ch = b - t;
+            var ns = Math.min((wr.width - 2 * pad) / cw, (wr.height - 2 * pad) / ch, 1.5);
+            if (ns < 0.1) ns = 0.1;
+            S = ns;
+            TX = wr.width / 2 - ns * ((l - wr.left) + cw / 2);
+            TY = wr.height / 2 - ns * ((t - wr.top) + ch / 2);
+            applyT();
+        }
+
+        function bindControl(sel, fn) {
+            var btn = W.querySelector(sel);
+            if (!btn) return;
+            btn.addEventListener('pointerdown', function(e) { e.stopPropagation(); });
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                fn();
+            });
+        }
+        function centerZoom(f) {
+            var r = W.getBoundingClientRect();
+            zoomAt(r.width / 2, r.height / 2, f);
+        }
+        bindControl('.dbml-zoom-in-btn', function() { centerZoom(1.25); });
+        bindControl('.dbml-zoom-out-btn', function() { centerZoom(0.8); });
+        bindControl('.dbml-fit-btn', function() { autoFit = true; fitToView(); });
+        var legend = W.querySelector('.dbml-legend');
+        if (legend) {
+            legend.setAttribute('title', 'Click to collapse/expand legend');
+            legend.addEventListener('pointerdown', function(e) { e.stopPropagation(); });
+            legend.addEventListener('click', function() { legend.classList.toggle('collapsed'); });
+        }
+        W.addEventListener('dblclick', function(e) {
+            // Pointer capture retargets the event to the wrapper, so hit-test by position.
+            var el = D.elementFromPoint(e.clientX, e.clientY);
+            var row = el && el.closest ? el.closest('[data-field]') : null;
+            var grp = el && el.closest ? el.closest('[data-table]') : null;
+            var txt = row ? row.getAttribute('data-field') : (grp ? grp.getAttribute('data-table') : '');
+            if (!txt || !navigator.clipboard) return;
+            navigator.clipboard.writeText(txt).then(function() { showHint('Copied: ' + txt); }, function() {});
+        });
+        W.setAttribute('tabindex', '0');
+        W.addEventListener('keydown', function(e) {
+            if (e.target !== W) return;
+            if (e.key === '+' || e.key === '=') centerZoom(1.25);
+            else if (e.key === '-') centerZoom(0.8);
+            else if (e.key === '0') fitToView();
+            else return;
+            e.preventDefault();
+        });
 
         function uc() {
             for (var i = 0; i < CN; i++) {
@@ -542,7 +690,7 @@ D.addEventListener('DOMContentLoaded', function() {
                 _sxA[2] = fL; _exA[2] = tL;
                 _sxA[3] = fL; _exA[3] = tR;
 
-                var bc = 1e18, bs = 0, be = 0, bm = 0, b_is_step = false, b_my = 0, best_j = 0;
+                var bc = 1e18, bs = 0, be = 0, best_j = 0;
 
                 for (var j = 0; j < 4; j++) {
                     var sx = _sxA[j], ex = _exA[j];
@@ -649,8 +797,7 @@ D.addEventListener('DOMContentLoaded', function() {
                     }
 
                     if (co < bc) {
-                        bc = co; bs = sx; be = ex; bm = mx;
-                        b_is_step = is_step; b_my = my; best_j = j;
+                        bc = co; bs = sx; be = ex; best_j = j;
                     }
                 }
 
@@ -755,16 +902,45 @@ D.addEventListener('DOMContentLoaded', function() {
             for (var i = 0; i < sel.length; i++) sel[i].classList.remove('selected');
         }
 
-    })(wraps[wi]); }
-    function onFullscreenChange() {
-        var fsEl = D.fullscreenElement || D.webkitFullscreenElement;
-        var btns = D.querySelectorAll('.dbml-fullscreen-btn');
-        for (var i = 0; i < btns.length; i++) {
-            var inFs = fsEl && fsEl.contains(btns[i]);
-            btns[i].setAttribute('title', inFs ? 'Exit fullscreen (Esc)' : 'Fullscreen');
+        fitToView();
+        function refitIfAuto() { if (autoFit) fitToView(); }
+        if (D.fonts) {
+            if (D.fonts.ready) D.fonts.ready.then(refitIfAuto);
+            if (D.fonts.addEventListener) D.fonts.addEventListener('loadingdone', refitIfAuto);
         }
+        if (window.ResizeObserver) {
+            var lastW = W.clientWidth, lastH = W.clientHeight;
+            new ResizeObserver(function() {
+                if (W.clientWidth === lastW && W.clientHeight === lastH) return;
+                lastW = W.clientWidth; lastH = W.clientHeight;
+                if (autoFit) fitToView();
+            }).observe(W);
+        }
+    })(wraps[wi]); }
+}
+
+function onFullscreenChange() {
+    var fsEl = D.fullscreenElement || D.webkitFullscreenElement;
+    var btns = D.querySelectorAll('.dbml-fullscreen-btn');
+    for (var i = 0; i < btns.length; i++) {
+        var inFs = fsEl && fsEl.contains(btns[i]);
+        btns[i].setAttribute('title', inFs ? 'Exit fullscreen (Esc)' : 'Fullscreen');
     }
+}
+
+if (!window.__dbmlBootstrapped) {
+    window.__dbmlBootstrapped = true;
     D.addEventListener('fullscreenchange', onFullscreenChange);
     D.addEventListener('webkitfullscreenchange', onFullscreenChange);
-});
+    // Material for MkDocs with navigation.instant swaps pages without DOMContentLoaded.
+    if (window.document$ && typeof window.document$.subscribe === 'function') {
+        window.document$.subscribe(initDiagrams);
+    }
+}
+
+if (D.readyState === 'loading') {
+    D.addEventListener('DOMContentLoaded', initDiagrams);
+} else {
+    initDiagrams();
+}
 })();

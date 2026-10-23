@@ -128,6 +128,7 @@ plugins:
       theme: black        # default; or default, ocean, sunset, forest, dark, dark_gray
       show_indexes: true  # display index information
       show_notes: true    # display table notes
+      height: 600         # diagram height in px
 ```
 
 ### Themes
