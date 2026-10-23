@@ -50,7 +50,7 @@ pytest tests --ignore=tests/e2e        # unit tests
 ### End-to-end (browser) tests
 
 The e2e suite builds a real MkDocs site (Material, `navigation.instant`) from
-`tests/e2e/site` and drives it with Playwright/Chromium.
+`tests/e2e/fixture_site` and drives it with Playwright/Chromium.
 
 ```bash
 pip install -e ".[e2e]"

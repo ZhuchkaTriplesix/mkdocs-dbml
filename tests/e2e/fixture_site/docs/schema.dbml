@@ -1,0 +1,9 @@
+Table products {
+  id integer [primary key]
+  name varchar(100) [not null]
+}
+
+Table categories {
+  id integer [primary key]
+  product_id integer [ref: > products.id]
+}
