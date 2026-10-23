@@ -64,9 +64,9 @@ def test_notes_and_indexes_tooltips(wrapper):
 
 def test_table_group_box_wraps_its_tables(home):
     group = home.locator(".dbml-tablegroup").first
-    assert group.get_attribute("data-group-name") == "auth"
+    assert group.get_attribute("data-group-name") == "edge"
     box = group.locator(".dbml-tablegroup-bg").bounding_box()
-    for name in ("accounts", "sessions"):
+    for name in ("spoke_a", "spoke_c"):
         t = home.locator(f'.dbml-table-group[data-table="{name}"]').bounding_box()
         assert box["x"] <= t["x"] and box["y"] <= t["y"]
         assert box["x"] + box["width"] >= t["x"] + t["width"] - 1
@@ -75,12 +75,12 @@ def test_table_group_box_wraps_its_tables(home):
 @pytest.mark.xfail(reason="layout can place non-members inside a group box, see #66", strict=True)
 def test_table_group_box_does_not_cover_other_tables(home):
     box = home.locator(".dbml-tablegroup .dbml-tablegroup-bg").first.bounding_box()
-    audit = home.locator('.dbml-table-group[data-table="audit_log"]').bounding_box()
+    other = home.locator('.dbml-table-group[data-table="spoke_b"]').bounding_box()
     overlaps = (
-        audit["x"] < box["x"] + box["width"]
-        and audit["x"] + audit["width"] > box["x"]
-        and audit["y"] < box["y"] + box["height"]
-        and audit["y"] + audit["height"] > box["y"]
+        other["x"] < box["x"] + box["width"]
+        and other["x"] + other["width"] > box["x"]
+        and other["y"] < box["y"] + box["height"]
+        and other["y"] + other["height"] > box["y"]
     )
     assert not overlaps
 
