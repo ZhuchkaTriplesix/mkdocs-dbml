@@ -37,3 +37,60 @@ def test_layout_empty_returns_empty():
     positions, dimensions = engine.calculate_positions()
     assert positions == {}
     assert dimensions == {}
+
+
+def test_layout_is_deterministic_across_hash_seeds():
+    import hashlib
+    import os
+    import subprocess
+    import sys
+
+    dbml = """
+Table a {
+  id integer
+}
+Table b {
+  id integer
+  a_id integer [ref: > a.id]
+}
+Table c {
+  id integer
+  a_id integer [ref: > a.id]
+}
+Table d {
+  id integer
+  a_id integer [ref: > a.id]
+}
+Table e {
+  id integer
+  b_id integer [ref: > b.id]
+  c_id integer [ref: > c.id]
+}
+"""
+    code = (
+        "from pydbml import PyDBML\n"
+        "from mkdocs_dbml_plugin.layout import GraphLayoutEngine\n"
+        f"p = PyDBML({dbml!r})\n"
+        "print(sorted(GraphLayoutEngine(p.tables, p.refs).calculate_positions()[0].items()))\n"
+    )
+    outputs = set()
+    for seed in ("1", "2", "3", "4", "5", "6", "7", "8"):
+        env = {**os.environ, "PYTHONHASHSEED": seed}
+        res = subprocess.run(
+            [sys.executable, "-c", code], env=env, capture_output=True, text=True, check=True
+        )
+        outputs.add(hashlib.md5(res.stdout.encode()).hexdigest())
+    assert len(outputs) == 1
+
+
+def test_tall_tables_do_not_overlap_next_layer():
+    from pydbml import PyDBML
+
+    cols = "\n".join(f"  c{i} integer" for i in range(15))
+    dbml = f"Table big {{\n  id integer\n{cols}\n}}\nTable small {{\n  id integer\n  big_id integer [ref: > big.id]\n}}\n"
+    p = PyDBML(dbml)
+    pos, dim = GraphLayoutEngine(p.tables, p.refs).calculate_positions()
+    (bx, by), (_, bh) = pos["big"], dim["big"]
+    sy = pos["small"][1]
+    assert sy >= by + bh or pos["small"][0] != bx
+    assert sy - (by + bh) >= 120 or sy + dim["small"][1] <= by
