@@ -289,6 +289,13 @@ function initDiagrams() {
             }
         }
 
+        var tablesLayer = svg.querySelector('.dbml-tables-layer');
+        // Screen px -> SVG user units, accounting for both our zoom and the viewBox scale.
+        function pxToUnits() {
+            var m = tablesLayer && tablesLayer.getScreenCTM && tablesLayer.getScreenCTM();
+            return m && m.a ? 1 / m.a : 1 / S;
+        }
+
         var activePointers = new Map();
         var initialPinchDist = 0;
         var initialPinchScale = 1;
@@ -424,7 +431,7 @@ function initDiagrams() {
             td.e.addEventListener('focus', function() { if (M === 0) hl(td.n); });
             td.e.addEventListener('blur', function() { if (M === 0) uhl(); });
             td.e.addEventListener('keydown', function(e) {
-                var step = e.shiftKey ? 40 : 10, mx = 0, my = 0;
+                var step = (e.shiftKey ? 40 : 10) * pxToUnits(), mx = 0, my = 0;
                 if (e.key === 'ArrowLeft') mx = -step;
                 else if (e.key === 'ArrowRight') mx = step;
                 else if (e.key === 'ArrowUp') my = -step;
@@ -487,7 +494,7 @@ function initDiagrams() {
                 return;
             }
             if (M === 1 && DR) {
-                var invS = 1 / S;
+                var invS = pxToUnits();
                 DR.dx = IX + (e.clientX - MX0) * invS;
                 DR.dy = IY + (e.clientY - MY0) * invS;
                 // Apply transform immediately for responsive feel
@@ -502,7 +509,7 @@ function initDiagrams() {
                     });
                 }
             } else if (M === 3 && GR) {
-                var invS = 1 / S;
+                var invS = pxToUnits();
                 var dX = (e.clientX - MX0) * invS;
                 var dY = (e.clientY - MY0) * invS;
                 for (var k = 0; k < GR.length; k++) {
