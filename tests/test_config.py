@@ -1,6 +1,5 @@
 """Tests for theme config."""
 
-import pytest
 from mkdocs_dbml_plugin.config import (
     get_theme_colors,
     THEMES,

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from playwright.sync_api import expect
 
 PK_LIGHT_SCHEME = "rgb(185, 28, 28)"  # not used by `black` theme, see below
 PK_DARK = "rgb(248, 113, 113)"

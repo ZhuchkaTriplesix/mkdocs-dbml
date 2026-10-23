@@ -18,6 +18,7 @@ Edit code in `mkdocs_dbml_plugin/`. The `example/` site uses the local plugin.
 ## Testing
 
 - **Unit tests:** `pip install -e ".[dev]"` then `pytest tests/ -v`
+- **Lint:** `ruff check .` (also available as `pre-commit install`); CI enforces it and a coverage floor (`pytest --cov`)
 - **Example site:** `cd example && mkdocs serve` and check docs in the browser.
 - Optionally install Cython and build: `pip install cython && python setup.py build_ext --inplace`.
 

@@ -1,6 +1,5 @@
 """Tests for DbmlRenderer."""
 
-import pytest
 from mkdocs_dbml_plugin.renderer import DbmlRenderer
 
 
@@ -309,7 +308,7 @@ def test_svg_ids_unique_across_diagrams():
 
 def test_url_refs_resolve_to_defined_ids():
     import re
-    html = DbmlRenderer().render(SIMPLE) if "SIMPLE" in globals() else DbmlRenderer().render(
+    html = DbmlRenderer().render(
         "Table a {\n  id integer [pk]\n}\nTable b {\n  aid integer [ref: > a.id]\n}"
     )
     defined = set(re.findall(r'\bid="([^"]+)"', html))
@@ -358,7 +357,9 @@ def test_theme_title_gradients_have_contrast():
     def lum(h):
         h = h.lstrip("#")
         r, g, b = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
-        f = lambda c: c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+        def f(c):
+            return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+
         return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
 
     for name, t in THEMES.items():
