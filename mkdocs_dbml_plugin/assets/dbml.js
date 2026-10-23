@@ -454,6 +454,7 @@ function initDiagrams() {
         })(TA[i]); }
 
         W.addEventListener('pointerdown', function(e) {
+            autoFit = false;
             activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
             if (activePointers.size === 2) {
                 initPinch();
@@ -587,6 +588,7 @@ function initDiagrams() {
         }
 
         function zoomAt(px, py, factor) {
+            autoFit = false;
             var ns = S * factor;
             if (ns < 0.1) ns = 0.1; else if (ns > 3) ns = 3;
             var c = ns / S;
@@ -595,6 +597,8 @@ function initDiagrams() {
             S = ns;
             applyT();
         }
+
+        var autoFit = true;
 
         function fitToView() {
             S = 1; TX = 0; TY = 0;
@@ -637,7 +641,7 @@ function initDiagrams() {
         }
         bindControl('.dbml-zoom-in-btn', function() { centerZoom(1.25); });
         bindControl('.dbml-zoom-out-btn', function() { centerZoom(0.8); });
-        bindControl('.dbml-fit-btn', fitToView);
+        bindControl('.dbml-fit-btn', function() { autoFit = true; fitToView(); });
         var legend = W.querySelector('.dbml-legend');
         if (legend) {
             legend.setAttribute('title', 'Click to collapse/expand legend');
@@ -899,6 +903,14 @@ function initDiagrams() {
         }
 
         fitToView();
+        if (window.ResizeObserver) {
+            var lastW = W.clientWidth, lastH = W.clientHeight;
+            new ResizeObserver(function() {
+                if (W.clientWidth === lastW && W.clientHeight === lastH) return;
+                lastW = W.clientWidth; lastH = W.clientHeight;
+                if (autoFit) fitToView();
+            }).observe(W);
+        }
     })(wraps[wi]); }
 }
 

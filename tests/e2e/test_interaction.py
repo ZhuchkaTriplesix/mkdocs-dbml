@@ -277,3 +277,36 @@ def test_fullscreen_button_toggles_title(home, wrapper):
 def test_double_click_on_table_header_copies_table_name(home, wrapper):
     wrapper.locator('.dbml-table-group[data-table="posts"] .dbml-table-title').dblclick()
     assert home.evaluate("navigator.clipboard.readText()") == "posts"
+
+
+def inside(wrapper):
+    box = wrapper.bounding_box()
+    for t in wrapper.locator(".dbml-table-group").all():
+        b = t.bounding_box()
+        if not (
+            b["x"] >= box["x"] - 1
+            and b["x"] + b["width"] <= box["x"] + box["width"] + 1
+            and b["y"] >= box["y"] - 1
+            and b["y"] + b["height"] <= box["y"] + box["height"] + 1
+        ):
+            return False
+    return True
+
+
+def test_untouched_diagram_refits_when_the_viewport_changes(home, wrapper):
+    home.set_viewport_size({"width": 760, "height": 900})
+    home.wait_for_function(
+        "() => { const w = document.querySelector('.dbml-diagram-wrapper'); return w.getBoundingClientRect().width < 760; }"
+    )
+    home.wait_for_timeout(300)
+    assert inside(wrapper)
+
+
+def test_manually_zoomed_diagram_is_not_refit_on_resize(home, wrapper):
+    wrapper.locator(".dbml-zoom-in-btn").click()
+    zoomed = scale_of(wrapper)
+    home.set_viewport_size({"width": 760, "height": 900})
+    home.wait_for_timeout(400)
+    assert scale_of(wrapper) == pytest.approx(zoomed)
+    wrapper.locator(".dbml-fit-btn").click()
+    assert inside(wrapper)
