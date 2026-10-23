@@ -184,8 +184,7 @@
 
 .dbml-relationship-line {
     opacity: 0.7;
-    pointer-events: stroke;
-    cursor: pointer;
+    pointer-events: none; /* the wider transparent .dbml-relationship-hit receives the events */
     stroke-linecap: square;
 }
 
@@ -322,7 +321,7 @@
         fill: white;
     }
 
-    :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-relationship-line:hover {
+    :root:not([data-md-color-scheme="default"]):not([data-theme="light"]) .dbml-relationship-hit:hover + .dbml-relationship-line {
         filter: drop-shadow(0 4px 12px rgba(129, 140, 248, 0.6));
     }
 }
@@ -397,9 +396,9 @@
     fill: white;
 }
 
-[data-md-color-scheme="slate"] .dbml-relationship-line:hover,
-[data-theme="dark"] .dbml-relationship-line:hover,
-.dark .dbml-relationship-line:hover {
+[data-md-color-scheme="slate"] .dbml-relationship-hit:hover + .dbml-relationship-line,
+[data-theme="dark"] .dbml-relationship-hit:hover + .dbml-relationship-line,
+.dark .dbml-relationship-hit:hover + .dbml-relationship-line {
     filter: drop-shadow(0 4px 12px rgba(129, 140, 248, 0.6));
 }
 

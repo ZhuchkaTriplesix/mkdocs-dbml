@@ -190,7 +190,6 @@ def point_on_line(wrapper, index):
     )
 
 
-@pytest.mark.xfail(reason="visible line swallows clicks, see #70", strict=True)
 def test_clicking_a_relationship_selects_it_and_its_fields(home, wrapper):
     x, y = point_on_line(wrapper, 0)
     home.mouse.click(x, y)
